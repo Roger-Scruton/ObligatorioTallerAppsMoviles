@@ -221,19 +221,20 @@ function Registro() {
             .then((data) => {
                 // Si hay error en la respuesta de la API, mostrar el mensaje de error
                 if (data !== undefined) {
-                    document.querySelector("#errorMessage").innerHTML = data.error;
+                    document.querySelector("##errorMessageRegistro").innerHTML = data.error;
                 }
             });
     } catch (error) {
         // Si hay errores en el bloque try-catch, mostrarlos en la consola para depuración
         console.error("Error en try-catch:", error);
-        document.querySelector("#errorMessage").innerHTML = error.message;
+        document.querySelector("##errorMessageRegistro").innerHTML = error.message;
     }
 }
     function LimpiarCampos() {
         document.querySelector("#usuario").value = "";
         document.querySelector("#passRegistro").value = "";
     }
+    
 // Función para manejar los errores de la API
 function handleApiError(error) {
     console.error("Error en fetch:", error);
