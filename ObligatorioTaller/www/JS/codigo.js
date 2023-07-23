@@ -3,8 +3,10 @@ const API_BASE_URL = "https://censo.develotion.com/";
 const API_LOGIN_ENDPOINT = API_BASE_URL + "login.php";
 const API_USUARIOS_ENDPOINT = API_BASE_URL + "usuarios.php";
 const API_PERSONAS_ENDPOINT = API_BASE_URL + "personas.php";
+const API_DEPARTAMENTOS_ENDPOINT = API_BASE_URL + "departamentos.php"
 // Variable para almacenar el token del usuario
 let token;
+let idUsuario;
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
 localStorage.setItem("hayUsuarioLogueado", "false")
 }
@@ -71,8 +73,10 @@ function Registro() {
                 document.querySelector("#errorMessageRegistro").innerHTML = "Registro exitoso";
                 // Si el registro fue exitoso, obtener el token del usuario
                 token = data.apiKey;
+                idUsuario = data.id;
                 // Guardar el token y el estado de sesión en el localStorage
                 localStorage.setItem("token", token);
+                localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
                 // Mostrar la sección de usuario logueado
                 Inicio(false);
@@ -132,8 +136,10 @@ function IniciarSesion() {
             .then((data) => {
                 // Si el login fue exitoso, se obtiene el token del usuario
                 token = data.apiKey;
+                idUsuario = data.id;
                 // Se guarda el token y el estado de sesión en el localStorage
                 localStorage.setItem("token", token);
+                localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
                 // Mostrar la sección de usuario logueado
                 Inicio(false);
@@ -154,8 +160,6 @@ function IniciarSesion() {
     }
 }
 
-// Función para registrar un nuevo usuario
-
 // Función para cerrar sesión
 function CerrarSesion() {
     // Limpiar el token y el estado de sesión del localStorage
@@ -166,10 +170,103 @@ function CerrarSesion() {
     // Limpiar los campos de usuario y contraseña
     LimpiarCampos();
 }
+// Función para agregar una nueva persona
+function AgregarPersona() {
+    let nombrePersona = document.querySelector("#nombrePersona").value;
+    let departamento = document.querySelector("#departamento").value;
+    let ciudad = document.querySelector("#ciudad").value;
+    let fechaNacimiento = document.querySelector("#fechaNacimiento").value;
+    let ocupacion = document.querySelector("#ocupacion").value;
+    document.querySelector("#errorMessagePersona").innerHTML = "";
+
+    try {
+        if (nombrePersona.trim().length === 0) {
+            throw new Error("El nombre de la persona es requerido");
+        }
+        if (departamento.trim().length === 0 || ciudad.trim().length === 0 || fechaNacimiento.trim().length === 0 || ocupacion.trim().length === 0) {
+            throw new Error("Por favor, complete todos los campos");
+        }
+
+        // Hacer la llamada a la API para agregar una nueva persona
+        fetch(API_PERSONAS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json",
+                "apikey": localStorage.getItem("token")
+            },
+            body: JSON.stringify({
+                "idUsuario": localStorage.getItem("idUsuario"),
+                "nombre": nombrePersona,
+                "departamento": parseInt(departamento),
+                "ciudad": parseInt(ciudad),
+                "fechaNacimiento": fechaNacimiento,
+                "ocupacion": parseInt(ocupacion)
+            })
+        })
+            .then((response) => {
+                if (response.ok) {
+                    // Mostrar mensaje de registro exitoso
+                    document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
+                    LimpiarCamposPersona();
+                } else {
+                    return Promise.reject(response);
+                }
+            })
+            .catch(handleApiError);
+    } catch (error) {
+        // Si hay errores en el bloque try-catch, mostrarlos en la consola para depuración
+        console.error("Error en try-catch:", error);
+        document.querySelector("#errorMessagePersona").innerHTML = error.message;
+    }
+}
+// Función para cargar los departamentos en el select
+function cargarDepartamentos() {
+    fetch(API_DEPARTAMENTOS_ENDPOINT, {
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": localStorage.getItem("token"),
+            "iduser": localStorage.getItem("idUsuario")
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Error al obtener los departamentos");
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Aquí es donde debes acceder a la propiedad "departamentos" en el objeto "data"
+            const departamentos = data.departamentos;
+            // Llenar el select de departamentos con la información obtenida
+            const departamentoSelect = document.querySelector("#departamento");
+            departamentoSelect.innerHTML = "<option value='' selected disabled>Seleccione un departamento</option>";
+            departamentos.forEach(departamento => {
+                departamentoSelect.innerHTML += `<option value="${departamento.id}">${departamento.nombre}</option>`;
+            });
+        })
+        .catch(error => {
+            console.error("Error en fetch:", error);
+            document.querySelector("#errorMessagePersona").innerHTML = "Error al obtener los departamentos";
+        });
+}
+
+// Llamamos a la función para cargar los departamentos al cargar la página
+window.addEventListener("load", () => {
+    cargarDepartamentos();
+});
     function LimpiarCampos() {
         document.querySelector("#usuario").value = "";
         document.querySelector("#passRegistro").value = "";
     }
+
+// Función para limpiar los campos de ingreso de persona
+function LimpiarCamposPersona() {
+    document.querySelector("#nombrePersona").value = "";
+    document.querySelector("#departamento").value = "";
+    document.querySelector("#ciudad").value = "";
+    document.querySelector("#fechaNacimiento").value = "";
+    document.querySelector("#ocupacion").value = "";
+}
 function OcultarDivs() {
     document.querySelector("#login").style.display = "none";
     document.querySelector("#registro").style.display = "none";
@@ -219,54 +316,7 @@ function Inicio(showButtons) {
     }
 }
 // Función para agregar una nueva persona
-function AgregarPersona() {
-    let nombrePersona = document.querySelector("#nombrePersona").value;
-    let departamento = document.querySelector("#departamento").value;
-    let ciudad = document.querySelector("#ciudad").value;
-    let fechaNacimiento = document.querySelector("#fechaNacimiento").value;
-    let ocupacion = document.querySelector("#ocupacion").value;
-    document.querySelector("#errorMessagePersona").innerHTML = "";
 
-    try {
-        if (nombrePersona.trim().length === 0) {
-            throw new Error("El nombre de la persona es requerido");
-        }
-        if (departamento.trim().length === 0 || ciudad.trim().length === 0 || fechaNacimiento.trim().length === 0 || ocupacion.trim().length === 0) {
-            throw new Error("Por favor, complete todos los campos");
-        }
-
-        // Hacer la llamada a la API para agregar una nueva persona
-        fetch(API_PERSONAS_ENDPOINT, {
-            method: "POST",
-            headers: {
-                "Content-type": "application/json",
-                "apikey": token // Agregamos el token para autenticar la solicitud
-            },
-            body: JSON.stringify({
-                "idUsuario": 6, // Reemplazar por el ID del usuario actual (obtenido al loguearse)
-                "nombre": nombrePersona,
-                "departamento": parseInt(departamento), // Convertimos a número el ID del departamento
-                "ciudad": parseInt(ciudad), // Convertimos a número el ID de la ciudad
-                "fechaNacimiento": fechaNacimiento,
-                "ocupacion": parseInt(ocupacion) // Convertimos a número el ID de la ocupación
-            })
-        })
-            .then((response) => {
-                if (response.ok) {
-                    // Mostrar mensaje de registro exitoso
-                    document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
-                    LimpiarCamposPersona();
-                } else {
-                    return Promise.reject(response);
-                }
-            })
-            .catch(handleApiError); // Utilizar la función para manejar errores de la API
-    } catch (error) {
-        // Si hay errores en el bloque try-catch, mostrarlos en la consola para depuración
-        console.error("Error en try-catch:", error);
-        document.querySelector("#errorMessagePersona").innerHTML = error.message;
-    }
-}
 /*
 Este switch se puede refactorizar resolviendo en una linea , siempre y cuando el id del boton
 y el id del div solo se diferencien por el prefijo.
