@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="JS/codigo.js" defer></script>
+</head>
+<body>
+    <div id="menu">
+        <input type="button" value="Inicio" id="btnInicio">
+        <input type="button" value="Ingreso" id="btnIngreso">
+        <input type="button" value="Registro" id="btnRegistro">
+        <input type="button" value="Cerrar sesión" id="btnCerrarSesion">
+    </div>
+    <div id="inicio">
+        <h3>Bienvenido al censo</h3>
+        <div id="divInicioUsuarioDesconocido">
+            <p>Gracias por colaborar</p>
+        </div>
+        <div id="divInicioUsuarioLogueado">
+            <table>
+                <thead>
+                    <th>Usuario</th>
+                    <th>Apellido</th>
+                    <th>Pais</th>
+                    <th>Usuario</th>
+                </thead>
+                <tbody id="tablaInicioBody"></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="login">
+        <label>Nombre Usuario</label>
+        <input type="text" id="nombreUsuario">
+        <br>
+        <label>Password</label>
+        <input type="password" id="password">
+        <br>
+        <input type="button" id="btnLogin" value="Iniciar sesion">
+        <p id="errorMessage"></p>
+    </div>
+    <div id="registro">
+        <label>Nombre Usuario</label>
+        <input type="text" id="usuario">
+        <br>
+        <label>Password</label>
+        <input type="password" id="passRegistro">
+        <br>
+        <input type="button" id="btnRegistroUsuario" value="Registrarse">
+        <p id="errorMessageRegistro"></p>
+    </div>
+</body>
+</html>
