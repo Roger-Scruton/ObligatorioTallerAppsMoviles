@@ -6,16 +6,20 @@ const API_USUARIOS_ENDPOINT = API_BASE_URL + "usuarios.php";
 // Variable para almacenar el token del usuario
 let token;
 
-let hayUsuarioLogueado = false;
-localStorage.setItem("hayUsuarioLogueado", hayUsuarioLogueado)
-
-console.log(localStorage.getItem("hayUsuarioLogueado"));
-if(localStorage.getItem("hayUsuarioLogueado")){
-    Inicio(true);
-    OcultarBotones(false);
-}else{
-    inicializar();
+if(localStorage.getItem("hayUsuarioLogueado") === null) {
+localStorage.setItem("hayUsuarioLogueado", "false")
 }
+let hayUsuarioLogueado = localStorage.getItem("hayUsuarioLogueado")
+function autoLogin(){
+    if(localStorage.getItem("token").trim.length !== 0 && hayUsuarioLogueado === "true" ){
+        Inicio(true);
+    }else{
+
+        inicializar();
+
+    }
+}
+autoLogin();
 
 function inicializar() {
     Inicio(true);
@@ -47,13 +51,12 @@ function AgregarEventos() {
 
 
 }
-
 function Inicio(showButtons) {
     OcultarDivs();
     OcultarBotones(showButtons);
     AgregarEventos();
     document.querySelector("#inicio").style.display = "block";
-    if (!localStorage.getItem("hayUsuarioLogueado")) {
+    if (localStorage.getItem("hayUsuarioLogueado") === "false") {
         document.querySelector("#divInicioUsuarioDesconocido").style.display = "block";
         document.querySelector("#divInicioUsuarioLogueado").style.display = "none";
     }
@@ -118,7 +121,7 @@ function IniciarSesion() {
                 token = data.apiKey;
                 // Se guarda el token y el estado de sesión en el localStorage
                 localStorage.setItem("token", token);
-                localStorage.setItem("hayUsuarioLogueado", true);
+                localStorage.setItem("hayUsuarioLogueado", "true");
                 // Mostrar la sección de usuario logueado
                 Inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
@@ -141,8 +144,8 @@ function IniciarSesion() {
 // Función para cerrar sesión
 function CerrarSesion() {
     // Limpiar el token y el estado de sesión del localStorage
-    localStorage.removeItem("token");
-    localStorage.setItem("hayUsuarioLogueado", false);
+    localStorage.setItem("token", "");
+    localStorage.setItem("hayUsuarioLogueado", "false");
     // Mostrar la sección de inicio de sesión
     Inicio(true);
     // Limpiar los campos de usuario y contraseña
@@ -192,7 +195,7 @@ function Registro() {
                 token = data.apiKey;
                 // Guardar el token y el estado de sesión en el localStorage
                 localStorage.setItem("token", token);
-                localStorage.setItem("hayUsuarioLogueado", true);
+                localStorage.setItem("hayUsuarioLogueado", "true");
                 // Mostrar la sección de usuario logueado
                 Inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
@@ -211,7 +214,6 @@ function Registro() {
         document.querySelector("#errorMessage").innerHTML = error.message;
     }
 }
-
     function LimpiarCampos() {
         document.querySelector("#usuario").value = "";
         document.querySelector("#passRegistro").value = "";
