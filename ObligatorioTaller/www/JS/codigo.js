@@ -118,10 +118,18 @@ function IniciarSesion() {
             .then((response) => {
                 if (response.ok) {
                     return response.json();
+                } else if (response.status === 409) {
+                    return response.json().then((data) => {
+                        // Mostrar mensaje de usuario ya registrado
+                        document.querySelector("#errorMessage").innerHTML = data.mensaje;
+                        LimpiarCampos();
+                        return Promise.reject(data);
+                    });
                 } else {
                     return Promise.reject(response);
                 }
             })
+
             .then((data) => {
                 // Si el login fue exitoso, se obtiene el token del usuario
                 token = data.apiKey;
@@ -187,10 +195,11 @@ function Registro() {
                     // si la respuesta es exitosa covertimos la misma a json
                     return response.json();
                 } else if (response.status === 409) {
-                    // Mostrar mensaje de usuario ya registrado
-                    document.querySelector("#errorMessageRegistro").innerHTML = "El usuario ya está registrado";
-                    LimpiarCampos();
-                    return Promise.reject(response);
+                    return response.json().then((data) => {
+                        document.querySelector("#errorMessageRegistro").innerHTML = data.mensaje;
+                        LimpiarCampos();
+                        return Promise.reject(data);
+                    });
                 } else {
                     return Promise.reject(response);
                 }
