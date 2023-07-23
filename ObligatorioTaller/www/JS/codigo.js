@@ -5,21 +5,27 @@ const API_USUARIOS_ENDPOINT = API_BASE_URL + "usuarios.php";
 
 // Variable para almacenar el token del usuario
 let token;
-
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
 localStorage.setItem("hayUsuarioLogueado", "false")
 }
-let hayUsuarioLogueado = localStorage.getItem("hayUsuarioLogueado")
+let hayUsuarioLogueado = localStorage.getItem("hayUsuarioLogueado");
+//localStorage.clear();
+autoLogin();
 function autoLogin(){
-    if(localStorage.getItem("token").trim.length !== 0 && hayUsuarioLogueado === "true" ){
-        Inicio(true);
+    //validamos que el token no sea nulo
+    if(localStorage.getItem("token") != null){
+        //si existe token y el usuario esta logueado mostramos su interfaz sino inicializamos 
+    if(localStorage.getItem("token") != "" && hayUsuarioLogueado === "true" ){
+        Inicio(false);
     }else{
-
+    inicializar();
+    }
+    }else{
         inicializar();
-
+        document.querySelector("#errorMessage").innerHTML = "El tiempo a expirado debe volver a iniciar sesion";
     }
 }
-autoLogin();
+
 
 function inicializar() {
     Inicio(true);
@@ -178,9 +184,8 @@ function Registro() {
         })
             .then((response) => {
                 if (response.ok) {
-                    // Mostrar mensaje de registro exitoso
-                    document.querySelector("#errorMessageRegistro").innerHTML = "Registro exitoso";
-                    LimpiarCampos();
+                    // si la respuesta es exitosa covertimos la misma a json
+                    return response.json();
                 } else if (response.status === 409) {
                     // Mostrar mensaje de usuario ya registrado
                     document.querySelector("#errorMessageRegistro").innerHTML = "El usuario ya está registrado";
@@ -191,6 +196,8 @@ function Registro() {
                 }
             })
             .then((data) => {
+                // Si llegamos aquí, no hubo errores en el servidor y se obtuvo la respuesta correctamente
+                document.querySelector("#errorMessageRegistro").innerHTML = "Registro exitoso";
                 // Si el registro fue exitoso, obtener el token del usuario
                 token = data.apiKey;
                 // Guardar el token y el estado de sesión en el localStorage
