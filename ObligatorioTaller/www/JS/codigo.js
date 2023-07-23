@@ -173,6 +173,7 @@ function CerrarSesion() {
 function OcultarDivs() {
     document.querySelector("#login").style.display = "none";
     document.querySelector("#registro").style.display = "none";
+    document.querySelector("#agregarPersona").style.display = "none";
 }
 function OcultarBotones(showButtons) {
     if (showButtons) {
@@ -185,7 +186,11 @@ function OcultarBotones(showButtons) {
         document.querySelector("#btnIngreso").style.display = "none";
         document.querySelector("#btnRegistro").style.display = "none";
     }
-
+}
+// Nueva función para mostrar el div agregarPersona y ocultar los demás botones del div divInicioUsuarioLogueado
+function MostrarAgregarPersona() {
+    OcultarDivs();
+    document.querySelector("#agregarPersona").style.display = "block";
 }
 function AgregarEventos() {
     document.querySelector("#btnInicio").addEventListener("click", MostrarOcultarDivs);
@@ -194,8 +199,8 @@ function AgregarEventos() {
     document.querySelector("#btnCerrarSesion").addEventListener("click", CerrarSesion);
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
-
-
+    // Agregamos el evento al botón btnAgregarPersona para mostrar el div agregarPersona
+    document.querySelector("#btnAgregarPersona").addEventListener("click", MostrarAgregarPersona);
 }
 function Inicio(showButtons) {
     OcultarDivs();
@@ -211,6 +216,55 @@ function Inicio(showButtons) {
         document.querySelector("#divInicioUsuarioLogueado").style.display = "block";
         document.querySelector("#login").style.display = "none";
 
+    }
+}
+// Función para agregar una nueva persona
+function AgregarPersona() {
+    let nombrePersona = document.querySelector("#nombrePersona").value;
+    let departamento = document.querySelector("#departamento").value;
+    let ciudad = document.querySelector("#ciudad").value;
+    let fechaNacimiento = document.querySelector("#fechaNacimiento").value;
+    let ocupacion = document.querySelector("#ocupacion").value;
+    document.querySelector("#errorMessagePersona").innerHTML = "";
+
+    try {
+        if (nombrePersona.trim().length === 0) {
+            throw new Error("El nombre de la persona es requerido");
+        }
+        if (departamento.trim().length === 0 || ciudad.trim().length === 0 || fechaNacimiento.trim().length === 0 || ocupacion.trim().length === 0) {
+            throw new Error("Por favor, complete todos los campos");
+        }
+
+        // Hacer la llamada a la API para agregar una nueva persona
+        fetch(API_PERSONAS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json",
+                "apikey": token // Agregamos el token para autenticar la solicitud
+            },
+            body: JSON.stringify({
+                "idUsuario": 6, // Reemplazar por el ID del usuario actual (obtenido al loguearse)
+                "nombre": nombrePersona,
+                "departamento": parseInt(departamento), // Convertimos a número el ID del departamento
+                "ciudad": parseInt(ciudad), // Convertimos a número el ID de la ciudad
+                "fechaNacimiento": fechaNacimiento,
+                "ocupacion": parseInt(ocupacion) // Convertimos a número el ID de la ocupación
+            })
+        })
+            .then((response) => {
+                if (response.ok) {
+                    // Mostrar mensaje de registro exitoso
+                    document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
+                    LimpiarCamposPersona();
+                } else {
+                    return Promise.reject(response);
+                }
+            })
+            .catch(handleApiError); // Utilizar la función para manejar errores de la API
+    } catch (error) {
+        // Si hay errores en el bloque try-catch, mostrarlos en la consola para depuración
+        console.error("Error en try-catch:", error);
+        document.querySelector("#errorMessagePersona").innerHTML = error.message;
     }
 }
 /*
@@ -230,6 +284,9 @@ function MostrarOcultarDivs() {
             break;
 
         case "btnCerrarSesion": OcultarBotones(false);
+            break;
+
+        case "btnAgregarPersona": document.querySelector("#agregarPersona").style.display = "block";
             break;
     }
 }
