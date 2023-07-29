@@ -313,11 +313,6 @@ function cargarOcupaciones() {
         })
         .catch(handleOcupacionesApiError);
 }
-// Llamamos a la función para cargar los departamentos y ocupaciones al cargar la página
-window.addEventListener("load", () => {
-    cargarDepartamentos();
-    cargarOcupaciones();
-});
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
 document.querySelector("#fechaNacimiento").addEventListener("change", (event) => {
@@ -381,9 +376,13 @@ function AgregarEventos() {
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
     document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
-    //document.querySelector("#btnListadoPersonas").addEventListener("click", obtenerListadoPersonas);
-    // Agregamos el evento al botón btnAgregarPersona para mostrar el div agregarPersona
-    document.querySelector("#btnAgregarPersona").addEventListener("click", MostrarAgregarPersona);
+   // document.querySelector("#btnListadoPersonas").addEventListener("click", obtenerListadoPersonas);
+    document.querySelector("#btnAgregarPersona").addEventListener("click", () => {
+        MostrarAgregarPersona();
+        // Cargamos departamentos y ocupaciones al hacer clic en el botón "Agregar Persona"
+        cargarDepartamentos();
+        cargarOcupaciones();
+    });
 
 }
 function Inicio(showButtons) {
