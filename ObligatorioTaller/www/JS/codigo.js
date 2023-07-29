@@ -258,7 +258,7 @@ function cargarDepartamentos() {
                 cargarCiudadesPorDepartamento(selectedDepartamento);
             });
         })
-        .catch(handleApiErrorDepartamentos);
+        .catch(handleApiError);
 }
 function cargarCiudadesPorDepartamento(idDepartamento) {
     fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
@@ -311,7 +311,78 @@ function cargarOcupaciones() {
                 ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
             });
         })
-        .catch(handleOcupacionesApiError);
+        .catch(handleApiError);
+}
+
+function obtenerListadoPersonas() {
+    fetch(API_PERSONAS_ENDPOINT + "?idUsuario=" + localStorage.getItem("idUsuario"), {
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": localStorage.getItem("token"),
+            "iduser": localStorage.getItem("idUsuario")
+        }
+    })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error("Error al obtener el listado de personas");
+            }
+            return response.json();
+        })
+        .then((data) => {
+            const personas = data.personas;
+            const tablaInicioBody = document.querySelector("#tablaInicioBody");
+            tablaInicioBody.innerHTML = ""; // Limpiamos la tabla antes de agregar los datos
+
+            // Recorremos el listado de personas y las agregamos a la tabla
+            personas.forEach((persona) => {
+                tablaInicioBody.innerHTML += `
+            <tr>
+                <td>${persona.nombre}</td>
+                <td>${persona.fechaNacimiento}</td>
+                <td>${persona.ocupacion}</td>
+                <td><button onclick="eliminarPersona(${persona.id})">Eliminar</button></td>
+            </tr>
+        `;
+            });
+        })
+        .then(() => {
+            // Una vez que se ha generado el listado de personas, asignamos el evento de eliminar a los botones
+            const botonesEliminar = document.querySelectorAll("button[onclick='eliminarPersona()']");
+            botonesEliminar.forEach((boton) => {
+                boton.onclick = function () {
+                    const idPersona = parseInt(this.getAttribute("onclick").match(/\d+/)[0]);
+                    eliminarPersona(idPersona);
+                };
+            });
+        })
+        .catch(handleApiError); // Utilizar la función para manejar errores de la API
+}
+function eliminarPersona(idPersona) {
+    fetch(API_PERSONAS_ENDPOINT + "?idCenso=" + idPersona, {
+        method: "DELETE",
+        headers: {
+            "Content-type": "application/json",
+            "apikey": localStorage.getItem("token"),
+            "iduser": localStorage.getItem("idUsuario"),
+        },
+    })
+        .then((response) => {
+            if (response.ok) {
+                return response.json(); // Convertimos la respuesta a JSON
+            } else {
+                throw new Error("Error al eliminar la persona");
+            }
+        })
+        .then((data) => {
+            // Verificamos si la respuesta contiene el mensaje de éxito
+            if (data.mensaje) {
+                console.log(data.mensaje); // Mostramos el mensaje en la consola (opcional)
+                obtenerListadoPersonas(); // Actualizamos la lista de personas
+            } else {
+                throw new Error("Error al eliminar la persona");
+            }
+        })
+        .catch(handleApiError); // Utilizar la función para manejar errores de la API
 }
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
@@ -376,7 +447,7 @@ function AgregarEventos() {
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
     document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
-   // document.querySelector("#btnListadoPersonas").addEventListener("click", obtenerListadoPersonas);
+   document.querySelector("#btnListadoPersonas").addEventListener("click", obtenerListadoPersonas);
     document.querySelector("#btnAgregarPersona").addEventListener("click", () => {
         MostrarAgregarPersona();
         // Cargamos departamentos y ocupaciones al hacer clic en el botón "Agregar Persona"
@@ -401,7 +472,6 @@ function Inicio(showButtons) {
 
     }
 }
-// Función para agregar una nueva persona
 
 /*
 Este switch se puede refactorizar resolviendo en una linea , siempre y cuando el id del boton
@@ -432,60 +502,6 @@ function handleApiError(error) {
     return error.json().then((data) => {
         if (data !== undefined) {
             document.querySelector("#errorMessage").innerHTML = data.error;
-        }
-    });
-}
-function handleApiErrorDepartamentos(error) {
-    console.error("Error en fetch:", error);
-    return error.json().then((data) => {
-        if (data !== undefined) {
-            if (data.mensaje === "API Key o usuario inválido") {
-                // Si el mensaje de error es "API Key o usuario inválido", el token está vencido, así que volvemos a iniciar sesión para obtener un nuevo token.
-                return IniciarSesion().then(() => {
-                    // Después de obtener el nuevo token, llamamos a la función original nuevamente para reintentar la llamada a la API.
-                    if (error.url === API_DEPARTAMENTOS_ENDPOINT) {
-                        return cargarDepartamentos();
-                    } else if (error.url.startsWith(API_CIUDADES_ENDPOINT)) {
-                        const idDepartamento = error.url.split("=")[1];
-                        return cargarCiudadesPorDepartamento(idDepartamento);
-                    } else {
-                        // Otra posibilidad sería mostrar un mensaje de error general.
-                        throw new Error("Error en la llamada a la API");
-                    }
-                });
-            } else if (data.mensaje === "Debe proporcionar una API Key e id de usuario") {
-                // Si el mensaje de error es "Debe proporcionar una API Key e id de usuario", significa que faltan los headers mandatorios, por lo que debemos mostrar un mensaje de error apropiado.
-                if (error.url.startsWith(API_DEPARTAMENTOS_ENDPOINT) || error.url.startsWith(API_CIUDADES_ENDPOINT)) {
-                    document.querySelector("#errorMessagePersona").innerHTML = "Debe proporcionar una API Key e id de usuario";
-                } else {
-                    document.querySelector("#errorMessage").innerHTML = data.error;
-                }
-            } else {
-                // Otra posibilidad sería mostrar un mensaje de error general.
-                throw new Error("Error en la llamada a la API");
-            }
-        }
-    });
-}
-// Función para manejar los errores de la API al cargar ocupaciones
-function handleOcupacionesApiError(error) {
-    console.error("Error en fetch de ocupaciones:", error);
-    return error.json().then((data) => {
-        if (data !== undefined) {
-            if (data.mensaje === "API Key o usuario inválido") {
-                // Si el mensaje de error es "API Key o usuario inválido", el token está vencido, así que volvemos a iniciar sesión para obtener un nuevo token.
-                return IniciarSesion().then(() => {
-                    // Después de obtener el nuevo token, llamamos a la función original nuevamente para reintentar la llamada a la API.
-                    return cargarOcupaciones();
-                });
-            } else if (data.mensaje === "Debe proporcionar una API Key e id de usuario") {
-                // Si el mensaje de error es "Debe proporcionar una API Key e id de usuario", significa que faltan los headers mandatorios, por lo que debemos mostrar un mensaje de error adecuado.
-                document.querySelector("#errorMessagePersona").innerHTML =
-                    "Debe proporcionar una API Key e id de usuario";
-            } else {
-                // Otra posibilidad sería mostrar un mensaje de error general.
-                throw new Error("Error en la llamada a la API");
-            }
         }
     });
 }
