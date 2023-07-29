@@ -196,7 +196,7 @@ function AgregarPersona() {
             headers: {
                 "Content-type": "application/json",
                 "apikey": localStorage.getItem("token"),
-                iduser: localStorage.getItem("idUsuario"),
+                "iduser": localStorage.getItem("idUsuario"),
 
             },
             body: JSON.stringify({
@@ -233,8 +233,8 @@ function cargarDepartamentos() {
     fetch(API_DEPARTAMENTOS_ENDPOINT, {
         headers: {
             "Content-Type": "application/json",
-            apikey: localStorage.getItem("token"),
-            iduser: localStorage.getItem("idUsuario"),
+            "apikey": localStorage.getItem("token"),
+            "iduser": localStorage.getItem("idUsuario"),
         },
     })
         .then((response) => {
@@ -293,8 +293,8 @@ function cargarOcupaciones() {
     fetch(API_OCUPACIONES_ENDPOINT, {
         headers: {
             "Content-Type": "application/json",
-            apikey: localStorage.getItem("token"),
-            iduser: localStorage.getItem("idUsuario"),
+            "apikey": localStorage.getItem("token"),
+            "iduser": localStorage.getItem("idUsuario"),
         },
     })
         .then((response) => {
@@ -381,6 +381,7 @@ function AgregarEventos() {
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
     document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
+    //document.querySelector("#btnListadoPersonas").addEventListener("click", obtenerListadoPersonas);
     // Agregamos el evento al botón btnAgregarPersona para mostrar el div agregarPersona
     document.querySelector("#btnAgregarPersona").addEventListener("click", MostrarAgregarPersona);
 
