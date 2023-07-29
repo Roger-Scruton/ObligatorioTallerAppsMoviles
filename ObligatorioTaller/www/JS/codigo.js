@@ -3,7 +3,9 @@ const API_BASE_URL = "https://censo.develotion.com/";
 const API_LOGIN_ENDPOINT = API_BASE_URL + "login.php";
 const API_USUARIOS_ENDPOINT = API_BASE_URL + "usuarios.php";
 const API_PERSONAS_ENDPOINT = API_BASE_URL + "personas.php";
-const API_DEPARTAMENTOS_ENDPOINT = API_BASE_URL + "departamentos.php"
+const API_DEPARTAMENTOS_ENDPOINT = API_BASE_URL + "departamentos.php";
+const API_CIUDADES_ENDPOINT = API_BASE_URL + "ciudades.php";
+
 // Variable para almacenar el token del usuario
 let token;
 let idUsuario;
@@ -235,13 +237,17 @@ function cargarDepartamentos() {
             return response.json();
         })
         .then(data => {
-            // Aquí es donde debes acceder a la propiedad "departamentos" en el objeto "data"
             const departamentos = data.departamentos;
-            // Llenar el select de departamentos con la información obtenida
             const departamentoSelect = document.querySelector("#departamento");
             departamentoSelect.innerHTML = "<option value='' selected disabled>Seleccione un departamento</option>";
             departamentos.forEach(departamento => {
                 departamentoSelect.innerHTML += `<option value="${departamento.id}">${departamento.nombre}</option>`;
+            });
+
+            // Asociar evento de cambio al select de departamentos
+            departamentoSelect.addEventListener("change", () => {
+                const selectedDepartamento = departamentoSelect.value;
+                cargarCiudadesPorDepartamento(selectedDepartamento);
             });
         })
         .catch(error => {
@@ -254,6 +260,34 @@ function cargarDepartamentos() {
 window.addEventListener("load", () => {
     cargarDepartamentos();
 });
+function cargarCiudadesPorDepartamento(idDepartamento) {
+    fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": localStorage.getItem("token"),
+            "iduser": localStorage.getItem("idUsuario")
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Error al obtener las ciudades");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const ciudades = data.ciudades;
+            const ciudadSelect = document.querySelector("#ciudad");
+            ciudadSelect.innerHTML = "<option value='' selected disabled>Seleccione una ciudad</option>";
+            ciudades.forEach(ciudad => {
+                ciudadSelect.innerHTML += `<option value="${ciudad.id}">${ciudad.nombre}</option>`;
+            });
+        })
+        .catch(error => {
+            console.error("Error en fetch:", error);
+            document.querySelector("#errorMessagePersona").innerHTML = "Error al obtener las ciudades";
+        });
+}
+
     function LimpiarCampos() {
         document.querySelector("#usuario").value = "";
         document.querySelector("#passRegistro").value = "";

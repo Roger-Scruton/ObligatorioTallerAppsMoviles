@@ -7,78 +7,77 @@
     <script src="JS/codigo.js" defer></script>
 </head>
 <body>
-    <div id="menu">
-        <input type="button" value="Inicio" id="btnInicio">
-        <input type="button" value="Ingreso" id="btnIngreso">
-        <input type="button" value="Registro" id="btnRegistro">
-        <input type="button" value="Cerrar sesión" id="btnCerrarSesion">
+<div id="menu">
+    <input type="button" value="Inicio" id="btnInicio">
+    <input type="button" value="Ingreso" id="btnIngreso">
+    <input type="button" value="Registro" id="btnRegistro">
+    <input type="button" value="Cerrar sesión" id="btnCerrarSesion">
+</div>
+<div id="inicio">
+    <h3>Bienvenido al censo</h3>
+    <div id="divInicioUsuarioDesconocido">
+        <p>Gracias por colaborar</p>
     </div>
-    <div id="inicio">
-        <h3>Bienvenido al censo</h3>
-        <div id="divInicioUsuarioDesconocido">
-            <p>Gracias por colaborar</p>
-        </div>
-        <div id="divInicioUsuarioLogueado">
-            <table>
-                <thead>
-                <input type="button" id="btnAgregarPersona" value="AgregarPersona">
-                <input type="button" id="btnListadoPersonas" value="ListadoPersona">
-                <input type="button" id="btnCensadosTotales" value="CensadosTotales">
-                <input type="button" id="btnMapa" value="Mapa">
-                </thead>
-                <tbody id="tablaInicioBody"></tbody>
-            </table>
-        </div>
+    <div id="divInicioUsuarioLogueado">
+        <table>
+            <thead>
+            <input type="button" id="btnAgregarPersona" value="AgregarPersona">
+            <input type="button" id="btnListadoPersonas" value="ListadoPersona">
+            <input type="button" id="btnCensadosTotales" value="CensadosTotales">
+            <input type="button" id="btnMapa" value="Mapa">
+            </thead>
+            <tbody id="tablaInicioBody"></tbody>
+        </table>
     </div>
-    <div id="login">
-        <label>Nombre Usuario</label>
-        <input type="text" id="nombreUsuario">
-        <br>
-        <label>Password</label>
-        <input type="password" id="password">
-        <br>
-        <input type="button" id="btnLogin" value="Iniciar sesion">
-        <p id="errorMessage"></p>
-    </div>
-    <div id="registro">
-        <label>Nombre Usuario</label>
-        <input type="text" id="usuario">
-        <br>
-        <label>Password</label>
-        <input type="password" id="passRegistro">
-        <br>
-        <input type="button" id="btnRegistroUsuario" value="Registrarse">
-        <p id="errorMessageRegistro"></p>
-    </div>
-    <!-- Agregamos nuevos elementos para ingresar los datos de la persona -->
-    <div id="agregarPersona">
-        <label>Nombre:</label>
-        <input type="text" id="nombrePersona">
-        <br>
-        <label>Departamento:</label>
-        <select id="departamento">
-            <option value="" selected disabled>Seleccione un departamento</option>
-            <!-- Aquí se llenará dinámicamente el listado de departamentos -->
-        </select>
-        <br>
-        <label>Ciudad:</label>
-        <select id="ciudad">
-            <option value="" selected disabled>Seleccione una ciudad</option>
-            <!-- Aquí se llenará dinámicamente el listado de ciudades según el departamento seleccionado -->
-        </select>
-        <br>
-        <label>Fecha de nacimiento:</label>
-        <input type="date" id="fechaNacimiento">
-        <br>
-        <label>Ocupación:</label>
-        <select id="ocupacion">
-            <option value="" selected disabled>Seleccione una ocupación</option>
-            <!-- Aquí se llenará dinámicamente el listado de ocupaciones obtenido desde la API -->
-        </select>
-        <br>
-        <input type="button" id="btnEnviarDatosPersona" value="Agregar Persona">
-        <p id="errorMessagePersona"></p>
-    </div>
-
+</div>
+<div id="login">
+    <label>Nombre Usuario</label>
+    <input type="text" id="nombreUsuario">
+    <br>
+    <label>Password</label>
+    <input type="password" id="password">
+    <br>
+    <input type="button" id="btnLogin" value="Iniciar sesion">
+    <p id="errorMessage"></p>
+</div>
+<div id="registro">
+    <label>Nombre Usuario</label>
+    <input type="text" id="usuario">
+    <br>
+    <label>Password</label>
+    <input type="password" id="passRegistro">
+    <br>
+    <input type="button" id="btnRegistroUsuario" value="Registrarse">
+    <p id="errorMessageRegistro"></p>
+</div>
+<!-- Agregamos nuevos elementos para ingresar los datos de la persona -->
+<div id="agregarPersona">
+    <label>Nombre:</label>
+    <input type="text" id="nombrePersona">
+    <br>
+    <label>Departamento:</label>
+    <select id="departamento">
+        <option value="" selected disabled>Seleccione un departamento</option>
+        <!-- Aquí se llenará dinámicamente el listado de departamentos -->
+    </select>
+    <br>
+    <label>Ciudad:</label>
+    <select id="ciudad">
+        <option value="" selected disabled>Seleccione una ciudad</option>
+        <!-- Aquí se llenará dinámicamente el listado de ciudades según el departamento seleccionado -->
+    </select>
+    <br>
+    <label>Fecha de nacimiento:</label>
+    <input type="date" id="fechaNacimiento">
+    <br>
+    <label>Ocupación:</label>
+    <select id="ocupacion">
+        <option value="" selected disabled>Seleccione una ocupación</option>
+        <!-- Aquí se llenará dinámicamente el listado de ocupaciones obtenido desde la API -->
+    </select>
+    <br>
+    <input type="button" id="btnEnviarDatosPersona" value="Agregar Persona">
+    <p id="errorMessagePersona"></p>
+</div>
 </body>
 </html>
