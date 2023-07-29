@@ -5,6 +5,7 @@ const API_USUARIOS_ENDPOINT = API_BASE_URL + "usuarios.php";
 const API_PERSONAS_ENDPOINT = API_BASE_URL + "personas.php";
 const API_DEPARTAMENTOS_ENDPOINT = API_BASE_URL + "departamentos.php";
 const API_CIUDADES_ENDPOINT = API_BASE_URL + "ciudades.php";
+const API_OCUPACIONES_ENDPOINT = API_BASE_URL + "ocupaciones.php";
 
 // Variable para almacenar el token del usuario
 let token;
@@ -255,11 +256,6 @@ function cargarDepartamentos() {
             document.querySelector("#errorMessagePersona").innerHTML = "Error al obtener los departamentos";
         });
 }
-
-// Llamamos a la función para cargar los departamentos al cargar la página
-window.addEventListener("load", () => {
-    cargarDepartamentos();
-});
 function cargarCiudadesPorDepartamento(idDepartamento) {
     fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
         headers: {
@@ -288,7 +284,59 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
         });
 }
 
-    function LimpiarCampos() {
+// Función para cargar las ocupaciones en el select
+function cargarOcupaciones() {
+    fetch(API_OCUPACIONES_ENDPOINT, {
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": localStorage.getItem("token"),
+            "iduser": localStorage.getItem("idUsuario")
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Error al obtener las ocupaciones");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const ocupacionSelect = document.querySelector("#ocupacion");
+            ocupacionSelect.innerHTML = "<option value='' selected disabled>Seleccione una ocupación</option>";
+            data.ocupaciones.forEach(ocupacion => {
+                ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
+            });
+        })
+        .catch(error => {
+            console.error("Error en fetch:", error);
+            document.querySelector("#errorMessagePersona").innerHTML = "Error al obtener las ocupaciones";
+        });
+}
+// Llamamos a la función para cargar los departamentos y ocupaciones al cargar la página
+window.addEventListener("load", () => {
+    cargarDepartamentos();
+    cargarOcupaciones();
+});
+
+// Función para manejar el evento de cambio en el campo de fecha de nacimiento
+document.querySelector("#fechaNacimiento").addEventListener("change", (event) => {
+    // Obtenemos la fecha de nacimiento seleccionada
+    const fechaNacimiento = new Date(event.target.value);
+    // Obtenemos la fecha actual
+    const fechaActual = new Date();
+    // Calculamos la diferencia en años entre la fecha actual y la fecha de nacimiento
+    const edad = fechaActual.getFullYear() - fechaNacimiento.getFullYear();
+
+    // Si la edad es menor de 18 años, seleccionamos automáticamente la ocupación "Estudiante"
+    const ocupacionSelect = document.querySelector("#ocupacion");
+    if (edad < 18) {
+        ocupacionSelect.value = "5"; // ID de la ocupación "Estudiante"
+        ocupacionSelect.disabled = true;
+    } else {
+        ocupacionSelect.value = ""; // Reiniciamos el valor del select
+        ocupacionSelect.disabled = false;
+    }
+});
+function LimpiarCampos() {
         document.querySelector("#usuario").value = "";
         document.querySelector("#passRegistro").value = "";
     }
