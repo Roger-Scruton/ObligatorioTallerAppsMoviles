@@ -19,7 +19,7 @@ autoLogin();
 function autoLogin(){
     //validamos que el token no sea nulo
     if(localStorage.getItem("token") != null){
-        //si existe token y el usuario esta logueado mostramos su interfaz sino inicializamos 
+        //si existe token y el usuario esta logueado mostramos su interfaz sino inicializamos
     if(localStorage.getItem("token") != "" && hayUsuarioLogueado === "true" ){
         Inicio(false);
     }else{
@@ -195,7 +195,9 @@ function AgregarPersona() {
             method: "POST",
             headers: {
                 "Content-type": "application/json",
-                "apikey": localStorage.getItem("token")
+                "apikey": localStorage.getItem("token"),
+                iduser: localStorage.getItem("idUsuario"),
+
             },
             body: JSON.stringify({
                 "idUsuario": localStorage.getItem("idUsuario"),
@@ -215,7 +217,11 @@ function AgregarPersona() {
                     return Promise.reject(response);
                 }
             })
-            .catch(handleApiError);
+            .then(() => {
+                // Luego de mostrar el mensaje de éxito, actualizamos la lista de ocupaciones nuevamente
+                cargarOcupaciones();
+            })
+            .catch(handleApiError); // Utilizar la función para manejar errores de la API
     } catch (error) {
         // Si hay errores en el bloque try-catch, mostrarlos en la consola para depuración
         console.error("Error en try-catch:", error);
@@ -227,21 +233,22 @@ function cargarDepartamentos() {
     fetch(API_DEPARTAMENTOS_ENDPOINT, {
         headers: {
             "Content-Type": "application/json",
-            "apikey": localStorage.getItem("token"),
-            "iduser": localStorage.getItem("idUsuario")
-        }
+            apikey: localStorage.getItem("token"),
+            iduser: localStorage.getItem("idUsuario"),
+        },
     })
-        .then(response => {
+        .then((response) => {
             if (!response.ok) {
                 throw new Error("Error al obtener los departamentos");
             }
             return response.json();
         })
-        .then(data => {
+        .then((data) => {
             const departamentos = data.departamentos;
             const departamentoSelect = document.querySelector("#departamento");
-            departamentoSelect.innerHTML = "<option value='' selected disabled>Seleccione un departamento</option>";
-            departamentos.forEach(departamento => {
+            departamentoSelect.innerHTML =
+                "<option value='' selected disabled>Seleccione un departamento</option>";
+            departamentos.forEach((departamento) => {
                 departamentoSelect.innerHTML += `<option value="${departamento.id}">${departamento.nombre}</option>`;
             });
 
@@ -251,10 +258,7 @@ function cargarDepartamentos() {
                 cargarCiudadesPorDepartamento(selectedDepartamento);
             });
         })
-        .catch(error => {
-            console.error("Error en fetch:", error);
-            document.querySelector("#errorMessagePersona").innerHTML = "Error al obtener los departamentos";
-        });
+        .catch(handleApiErrorDepartamentos);
 }
 function cargarCiudadesPorDepartamento(idDepartamento) {
     fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
@@ -289,27 +293,25 @@ function cargarOcupaciones() {
     fetch(API_OCUPACIONES_ENDPOINT, {
         headers: {
             "Content-Type": "application/json",
-            "apikey": localStorage.getItem("token"),
-            "iduser": localStorage.getItem("idUsuario")
-        }
+            apikey: localStorage.getItem("token"),
+            iduser: localStorage.getItem("idUsuario"),
+        },
     })
-        .then(response => {
+        .then((response) => {
             if (!response.ok) {
                 throw new Error("Error al obtener las ocupaciones");
             }
             return response.json();
         })
-        .then(data => {
+        .then((data) => {
             const ocupacionSelect = document.querySelector("#ocupacion");
-            ocupacionSelect.innerHTML = "<option value='' selected disabled>Seleccione una ocupación</option>";
-            data.ocupaciones.forEach(ocupacion => {
+            ocupacionSelect.innerHTML =
+                "<option value='' selected disabled>Seleccione una ocupación</option>";
+            data.ocupaciones.forEach((ocupacion) => {
                 ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
             });
         })
-        .catch(error => {
-            console.error("Error en fetch:", error);
-            document.querySelector("#errorMessagePersona").innerHTML = "Error al obtener las ocupaciones";
-        });
+        .catch(handleOcupacionesApiError);
 }
 // Llamamos a la función para cargar los departamentos y ocupaciones al cargar la página
 window.addEventListener("load", () => {
@@ -378,8 +380,10 @@ function AgregarEventos() {
     document.querySelector("#btnCerrarSesion").addEventListener("click", CerrarSesion);
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
+    document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
     // Agregamos el evento al botón btnAgregarPersona para mostrar el div agregarPersona
     document.querySelector("#btnAgregarPersona").addEventListener("click", MostrarAgregarPersona);
+
 }
 function Inicio(showButtons) {
     OcultarDivs();
@@ -428,6 +432,60 @@ function handleApiError(error) {
     return error.json().then((data) => {
         if (data !== undefined) {
             document.querySelector("#errorMessage").innerHTML = data.error;
+        }
+    });
+}
+function handleApiErrorDepartamentos(error) {
+    console.error("Error en fetch:", error);
+    return error.json().then((data) => {
+        if (data !== undefined) {
+            if (data.mensaje === "API Key o usuario inválido") {
+                // Si el mensaje de error es "API Key o usuario inválido", el token está vencido, así que volvemos a iniciar sesión para obtener un nuevo token.
+                return IniciarSesion().then(() => {
+                    // Después de obtener el nuevo token, llamamos a la función original nuevamente para reintentar la llamada a la API.
+                    if (error.url === API_DEPARTAMENTOS_ENDPOINT) {
+                        return cargarDepartamentos();
+                    } else if (error.url.startsWith(API_CIUDADES_ENDPOINT)) {
+                        const idDepartamento = error.url.split("=")[1];
+                        return cargarCiudadesPorDepartamento(idDepartamento);
+                    } else {
+                        // Otra posibilidad sería mostrar un mensaje de error general.
+                        throw new Error("Error en la llamada a la API");
+                    }
+                });
+            } else if (data.mensaje === "Debe proporcionar una API Key e id de usuario") {
+                // Si el mensaje de error es "Debe proporcionar una API Key e id de usuario", significa que faltan los headers mandatorios, por lo que debemos mostrar un mensaje de error apropiado.
+                if (error.url.startsWith(API_DEPARTAMENTOS_ENDPOINT) || error.url.startsWith(API_CIUDADES_ENDPOINT)) {
+                    document.querySelector("#errorMessagePersona").innerHTML = "Debe proporcionar una API Key e id de usuario";
+                } else {
+                    document.querySelector("#errorMessage").innerHTML = data.error;
+                }
+            } else {
+                // Otra posibilidad sería mostrar un mensaje de error general.
+                throw new Error("Error en la llamada a la API");
+            }
+        }
+    });
+}
+// Función para manejar los errores de la API al cargar ocupaciones
+function handleOcupacionesApiError(error) {
+    console.error("Error en fetch de ocupaciones:", error);
+    return error.json().then((data) => {
+        if (data !== undefined) {
+            if (data.mensaje === "API Key o usuario inválido") {
+                // Si el mensaje de error es "API Key o usuario inválido", el token está vencido, así que volvemos a iniciar sesión para obtener un nuevo token.
+                return IniciarSesion().then(() => {
+                    // Después de obtener el nuevo token, llamamos a la función original nuevamente para reintentar la llamada a la API.
+                    return cargarOcupaciones();
+                });
+            } else if (data.mensaje === "Debe proporcionar una API Key e id de usuario") {
+                // Si el mensaje de error es "Debe proporcionar una API Key e id de usuario", significa que faltan los headers mandatorios, por lo que debemos mostrar un mensaje de error adecuado.
+                document.querySelector("#errorMessagePersona").innerHTML =
+                    "Debe proporcionar una API Key e id de usuario";
+            } else {
+                // Otra posibilidad sería mostrar un mensaje de error general.
+                throw new Error("Error en la llamada a la API");
+            }
         }
     });
 }
