@@ -10,6 +10,7 @@ const API_OCUPACIONES_ENDPOINT = API_BASE_URL + "ocupaciones.php";
 // Variable para almacenar el token del usuario
 let token;
 let idUsuario;
+let cacheOcupaciones = [];
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
 localStorage.setItem("hayUsuarioLogueado", "false")
 }
@@ -304,6 +305,8 @@ function cargarOcupaciones() {
             return response.json();
         })
         .then((data) => {
+            cacheOcupaciones = data; //Usado para cargar el select implementado para el filtro del listado de personas por ocupaciones
+            cargarSelectOcupaciones()
             const ocupacionSelect = document.querySelector("#ocupacion");
             ocupacionSelect.innerHTML =
                 "<option value='' selected disabled>Seleccione una ocupación</option>";
@@ -313,7 +316,6 @@ function cargarOcupaciones() {
         })
         .catch(handleApiError);
 }
-
 function obtenerListadoPersonas() {
     fetch(API_PERSONAS_ENDPOINT + "?idUsuario=" + localStorage.getItem("idUsuario"), {
         headers: {
@@ -330,32 +332,10 @@ function obtenerListadoPersonas() {
         })
         .then((data) => {
             const personas = data.personas;
-            const tablaInicioBody = document.querySelector("#tablaInicioBody");
-            tablaInicioBody.innerHTML = ""; // Limpiamos la tabla antes de agregar los datos
-
-            // Recorremos el listado de personas y las agregamos a la tabla
-            personas.forEach((persona) => {
-                tablaInicioBody.innerHTML += `
-            <tr>
-                <td>${persona.nombre}</td>
-                <td>${persona.fechaNacimiento}</td>
-                <td>${persona.ocupacion}</td>
-                <td><button onclick="eliminarPersona(${persona.id})">Eliminar</button></td>
-            </tr>
-        `;
-            });
+            // Llamamos a la función para filtrar y mostrar la tabla
+            filtrarPersonasPorOcupacion(personas);
         })
-        .then(() => {
-            // Una vez que se ha generado el listado de personas, asignamos el evento de eliminar a los botones
-            const botonesEliminar = document.querySelectorAll("button[onclick='eliminarPersona()']");
-            botonesEliminar.forEach((boton) => {
-                boton.onclick = function () {
-                    const idPersona = parseInt(this.getAttribute("onclick").match(/\d+/)[0]);
-                    eliminarPersona(idPersona);
-                };
-            });
-        })
-        .catch(handleApiError); // Utilizar la función para manejar errores de la API
+        .catch(handleApiError);
 }
 function eliminarPersona(idPersona) {
     fetch(API_PERSONAS_ENDPOINT + "?idCenso=" + idPersona, {
@@ -384,6 +364,60 @@ function eliminarPersona(idPersona) {
         })
         .catch(handleApiError); // Utilizar la función para manejar errores de la API
 }
+function filtrarPersonasPorOcupacion(listaCompleta) {
+    const ocupacionSelect = document.querySelector("#selectOcupacion");
+    const filtroOcupacionId = ocupacionSelect.value;
+
+    const tablaInicioBody = document.querySelector("#tablaInicioBody");
+    tablaInicioBody.innerHTML = ""; // Limpiamos la tabla antes de agregar los datos
+
+    if (filtroOcupacionId === "") {
+        // Si no hay selección en el filtro, mostramos la tabla completa
+        listaCompleta.forEach((persona) => {
+            tablaInicioBody.innerHTML += `
+                <tr>
+                    <td>${persona.nombre}</td>
+                    <td>${persona.fechaNacimiento}</td>
+                    <td>${persona.ocupacion}</td>
+                    <td><button onclick="eliminarPersona(${persona.id})">Eliminar</button></td>
+                </tr>
+            `;
+        });
+    } else {
+        // Si hay selección en el filtro, mostramos solo las personas con la ocupación seleccionada
+        const personasFiltradas = listaCompleta.filter((persona) => persona.ocupacion === parseInt(filtroOcupacionId));
+        personasFiltradas.forEach((persona) => {
+            tablaInicioBody.innerHTML += `
+                <tr>
+                    <td>${persona.nombre}</td>
+                    <td>${persona.fechaNacimiento}</td>
+                    <td>${persona.ocupacion}</td>
+                    <td><button onclick="eliminarPersona(${persona.id})">Eliminar</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    // Asignamos el evento de cambio al select de ocupaciones para actualizar la tabla al cambiar la selección
+    ocupacionSelect.addEventListener("change", () => {
+        filtrarPersonasPorOcupacion(listaCompleta);
+    });
+}
+function cargarSelectOcupaciones() {
+    const ocupacionSelect = document.querySelector("#selectOcupacion");
+    ocupacionSelect.innerHTML = "<option value=''>Todas las ocupaciones</option>";
+
+    // Agregar las opciones de ocupaciones al select
+    cacheOcupaciones.ocupaciones.forEach((ocupacion) => {
+        ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
+    });
+
+    // Asignar el evento para filtrar al cambiar la ocupación seleccionada
+    ocupacionSelect.addEventListener("change", function () {
+    });
+}
+
+
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
 document.querySelector("#fechaNacimiento").addEventListener("change", (event) => {
@@ -447,7 +481,10 @@ function AgregarEventos() {
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
     document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
-   document.querySelector("#btnListadoPersonas").addEventListener("click", obtenerListadoPersonas);
+   document.querySelector("#btnListadoPersonas").addEventListener("click",() => {
+       cargarOcupaciones();
+       obtenerListadoPersonas();
+   });
     document.querySelector("#btnAgregarPersona").addEventListener("click", () => {
         MostrarAgregarPersona();
         // Cargamos departamentos y ocupaciones al hacer clic en el botón "Agregar Persona"
@@ -473,10 +510,6 @@ function Inicio(showButtons) {
     }
 }
 
-/*
-Este switch se puede refactorizar resolviendo en una linea , siempre y cuando el id del boton
-y el id del div solo se diferencien por el prefijo.
-Ejemplo el boton es btnInicio y el div es Inicio*/
 function MostrarOcultarDivs() {
     OcultarDivs();
     switch (this.id) {
