@@ -11,6 +11,7 @@ const API_OCUPACIONES_ENDPOINT = API_BASE_URL + "ocupaciones.php";
 let token;
 let idUsuario;
 let cacheOcupaciones = [];
+let cachePersonas = []
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
 localStorage.setItem("hayUsuarioLogueado", "false")
 }
@@ -331,9 +332,9 @@ function obtenerListadoPersonas() {
             return response.json();
         })
         .then((data) => {
-            const personas = data.personas;
+            cachePersonas = data.personas;
             // Llamamos a la función para filtrar y mostrar la tabla
-            filtrarPersonasPorOcupacion(personas);
+            filtrarPersonasPorOcupacion(data.personas);
         })
         .catch(handleApiError);
 }
@@ -417,6 +418,34 @@ function cargarSelectOcupaciones() {
     });
 }
 
+function mostrarTotales(listaCompleta) {
+    const totalGeneral = listaCompleta.length;
+    let totalMontevideo = 0;
+    let totalRestoPais = 0;
+
+    // Contar la cantidad de personas de Montevideo y del resto del país
+    listaCompleta.forEach((persona) => {
+        if (persona.ciudad === 129833) {
+            totalMontevideo++;
+        } else {
+            totalRestoPais++;
+        }
+    });
+
+    // Mostrar los totales en la tabla
+    const tablaCensadosTotalesBody = document.querySelector("#tablaCensadosTotalesBody");
+    tablaCensadosTotalesBody.innerHTML = `
+        <tr>
+            <td>${totalGeneral}</td>
+            <td>${totalMontevideo}</td>
+            <td>${totalRestoPais}</td>
+        </tr>
+    `;
+
+    // Mostrar el div de censados totales
+    const divCensadosTotales = document.querySelector("#censadosTotales");
+    divCensadosTotales.style.display = "block";
+}
 
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
@@ -492,6 +521,9 @@ function AgregarEventos() {
         cargarOcupaciones();
     });
 
+    document.querySelector("#btnCensadosTotales").addEventListener("click", () => {
+        mostrarTotales(cachePersonas);
+    });
 }
 function Inicio(showButtons) {
     OcultarDivs();
