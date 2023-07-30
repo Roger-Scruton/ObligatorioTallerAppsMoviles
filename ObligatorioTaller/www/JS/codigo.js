@@ -1,3 +1,6 @@
+// constantes de ruteo para la navegacion
+const ruteo = document.querySelector("#ruteo");
+const menu = document.querySelector("#menu");
 // Constantes para las URL de la API
 const API_BASE_URL = "https://censo.develotion.com/";
 const API_LOGIN_ENDPOINT = API_BASE_URL + "login.php";
@@ -34,6 +37,7 @@ function autoLogin(){
 }
 function inicializar() {
     Inicio(true);
+    AgregarEventos();
 }
 
 function Registro() {
@@ -249,9 +253,9 @@ function cargarDepartamentos() {
             const departamentos = data.departamentos;
             const departamentoSelect = document.querySelector("#departamento");
             departamentoSelect.innerHTML =
-                "<option value='' selected disabled>Seleccione un departamento</option>";
+            "<ion-select-option value='' selected disabled>Seleccione un departamento</ion-slect-option>";
             departamentos.forEach((departamento) => {
-                departamentoSelect.innerHTML += `<option value="${departamento.id}">${departamento.nombre}</option>`;
+                departamentoSelect.innerHTML += `<ion-select-option value="${departamento.id}">${departamento.nombre}</ion-select-option>`;
             });
 
             // Asociar evento de cambio al select de departamentos
@@ -279,9 +283,9 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
         .then(data => {
             const ciudades = data.ciudades;
             const ciudadSelect = document.querySelector("#ciudad");
-            ciudadSelect.innerHTML = "<option value='' selected disabled>Seleccione una ciudad</option>";
+            ciudadSelect.innerHTML = "<ion-select-option value='' selected disabled>Seleccione una ciudad</ion-select-option>";
             ciudades.forEach(ciudad => {
-                ciudadSelect.innerHTML += `<option value="${ciudad.id}">${ciudad.nombre}</option>`;
+                ciudadSelect.innerHTML += `<ion-select-option value="${ciudad.id}">${ciudad.nombre}</ion-select-option>`;
             });
         })
         .catch(error => {
@@ -307,12 +311,12 @@ function cargarOcupaciones() {
         })
         .then((data) => {
             cacheOcupaciones = data; //Usado para cargar el select implementado para el filtro del listado de personas por ocupaciones
-            cargarSelectOcupaciones()
+            //cargarSelectOcupaciones()
             const ocupacionSelect = document.querySelector("#ocupacion");
             ocupacionSelect.innerHTML =
-                "<option value='' selected disabled>Seleccione una ocupación</option>";
+                "<ion-select-option value='' selected disabled>Seleccione una ocupación</ion-slect-option>";
             data.ocupaciones.forEach((ocupacion) => {
-                ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
+                ocupacionSelect.innerHTML += `<ion-select-option value="${ocupacion.id}">${ocupacion.ocupacion}</ion-select-option>`;
             });
         })
         .catch(handleApiError);
@@ -406,11 +410,11 @@ function filtrarPersonasPorOcupacion(listaCompleta) {
 }
 function cargarSelectOcupaciones() {
     const ocupacionSelect = document.querySelector("#selectOcupacion");
-    ocupacionSelect.innerHTML = "<option value=''>Todas las ocupaciones</option>";
+    ocupacionSelect.innerHTML = "<ion-select-option value=''>Todas las ocupaciones</ion-select-option>";
 
     // Agregar las opciones de ocupaciones al select
     cacheOcupaciones.ocupaciones.forEach((ocupacion) => {
-        ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
+        ocupacionSelect.innerHTML += `<ion-select-option value="${ocupacion.id}">${ocupacion.ocupacion}</ion-select-option>`;
     });
 
     // Asignar el evento para filtrar al cambiar la ocupación seleccionada
@@ -514,7 +518,7 @@ document.querySelector("#btnCensadosTotales").addEventListener("click", () => {
 
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
-document.querySelector("#fechaNacimiento").addEventListener("change", (event) => {
+/*document.querySelector("#fechaNacimiento").addEventListener("change", (event) => {
     // Obtenemos la fecha de nacimiento seleccionada
     const fechaNacimiento = new Date(event.target.value);
     // Obtenemos la fecha actual
@@ -531,10 +535,10 @@ document.querySelector("#fechaNacimiento").addEventListener("change", (event) =>
         ocupacionSelect.value = ""; // Reiniciamos el valor del select
         ocupacionSelect.disabled = false;
     }
-});
+});*/
 function LimpiarCampos() {
-        document.querySelector("#usuario").value = "";
-        document.querySelector("#passRegistro").value = "";
+        document.querySelector("#nombreUsuario").value = "";
+        document.querySelector("#password").value = "";
     }
 
 // Función para limpiar los campos de ingreso de persona
@@ -568,17 +572,18 @@ function MostrarAgregarPersona() {
     document.querySelector("#agregarPersona").style.display = "block";
 }
 function AgregarEventos() {
-    document.querySelector("#btnInicio").addEventListener("click", MostrarOcultarDivs);
+    document.querySelector("#ruteo").addEventListener("ionRouteWillChange", navegar);
+    //document.querySelector("#btnInicio").addEventListener("click", MostrarOcultarDivs);
     document.querySelector("#btnIngreso").addEventListener("click", MostrarOcultarDivs);
     document.querySelector("#btnRegistro").addEventListener("click", MostrarOcultarDivs);
     document.querySelector("#btnCerrarSesion").addEventListener("click", CerrarSesion);
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
     document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
-   document.querySelector("#btnListadoPersonas").addEventListener("click",() => {
+   /*document.querySelector("#btnListadoPersonas").addEventListener("click",() => {
        cargarOcupaciones();
        obtenerListadoPersonas();
-   });
+   });*/
     document.querySelector("#btnAgregarPersona").addEventListener("click", () => {
         MostrarAgregarPersona();
         // Cargamos departamentos y ocupaciones al hacer clic en el botón "Agregar Persona"
@@ -594,9 +599,11 @@ function Inicio(showButtons) {
     OcultarDivs();
     OcultarBotones(showButtons);
     AgregarEventos();
-    document.querySelector("#inicio").style.display = "block";
+    //document.querySelector("#login").style.display = "block";
     if (localStorage.getItem("hayUsuarioLogueado") === "false") {
         document.querySelector("#divInicioUsuarioDesconocido").style.display = "block";
+        //para ionic
+        ruteo.push("/")
         document.querySelector("#divInicioUsuarioLogueado").style.display = "none";
     }
     else {
@@ -634,4 +641,35 @@ function handleApiError(error) {
             document.querySelector("#errorMessage").innerHTML = data.error;
         }
     });
+}
+
+function cerrarMenu(){
+    menu.close();
+}
+
+function atras(){
+    ruteo.back();
+}
+
+function navegar(event){
+    OcultarDivs();
+    let ruta = event.detail.to;
+    if (ruta == "/") {
+        document.querySelector("#pageLogin").style.display = "block";
+    }
+    else if (ruta == "/pageRegistro") {
+        document.querySelector("#registro").style.display="block";
+        //document.querySelector("#pageRegistro").style.display = "block";
+
+    }
+    else if (ruta == "/agregarPersona") {
+        document.querySelector("#agregarPersona").style.display = "block";
+        document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras'>Volver</ion-button>"
+    }
+    else if (ruta == "/pageDetalle") {
+        document.querySelector("#pageDetalle").style.display = "block";
+    }
+    else{
+        CerrarSesion();
+    }
 }
