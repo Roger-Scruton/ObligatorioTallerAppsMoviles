@@ -418,6 +418,7 @@ function cargarSelectOcupaciones() {
     });
 }
 
+//CORREGIR, existe un endpint en el API que ya te calcula el total. Luego solo hay que filtrar montevideo e interior.
 function mostrarTotales(listaCompleta) {
     const totalGeneral = listaCompleta.length;
     let totalMontevideo = 0;
@@ -446,6 +447,70 @@ function mostrarTotales(listaCompleta) {
     const divCensadosTotales = document.querySelector("#censadosTotales");
     divCensadosTotales.style.display = "block";
 }
+/*async function obtenerTodasLasCiudades() {
+    const url = "{{censo}}/ciudades.php";
+    const headers = {
+        "Content-Type": "application/json",
+        "apikey": "4171e00ddf882b0c971147a8fb2dce72",
+        "iduser": "6" // Reemplaza este valor con el id del usuario adecuado
+    };
+
+    try {
+        const response = await fetch(url, { headers });
+        if (!response.ok) {
+            throw new Error("Error al obtener las ciudades");
+        }
+        const data = await response.json();
+        return data.ciudades;
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+}
+
+// Función para mostrar el mapa con las ciudades dentro del radio
+function mostrarMapa(latitudCensista, longitudCensista, radioKilometros, ciudades) {
+    const mapaDiv = document.querySelector("#mapa");
+    mapaDiv.innerHTML = ""; // Limpiamos cualquier contenido anterior del div
+
+    // Creamos el mapa en la posición del censista
+    const mymap = L.map('mapa').setView([latitudCensista, longitudCensista], 13);
+
+    // Agregamos una capa de mapa base (por ejemplo, OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mymap);
+
+    // Marcador para la ubicación del censista
+    L.marker([latitudCensista, longitudCensista]).addTo(mymap);
+
+    // Creamos un círculo alrededor del censista con el radio dado en metros
+    L.circle([latitudCensista, longitudCensista], {
+        color: 'blue',
+        fillColor: '#blue',
+        fillOpacity: 0.2,
+        radius: radioKilometros * 1000
+    }).addTo(mymap);
+
+    // Marcadores para las ciudades dentro del radio
+    ciudades.forEach((ciudad) => {
+        L.marker([ciudad.latitud, ciudad.longitud]).addTo(mymap).bindPopup(ciudad.nombre);
+    });
+}
+
+// Función para mostrar el div del mapa y el mapa con las ciudades dentro del radio
+async function mostrarMapaCensista(latitudCensista, longitudCensista, radioKilometros) {
+    const ciudades = await obtenerTodasLasCiudades();
+
+    // Lógica para filtrar las ciudades dentro del radio y mostrar el mapa
+    // ...
+
+    const mapaDiv = document.querySelector("#mapa");
+    mapaDiv.style.display = "block"; // Mostramos el div del mapa
+}
+
+// Asignamos el evento al botón "btnMapa" para que muestre el mapa cuando se haga clic en él
+document.querySelector("#btnCensadosTotales").addEventListener("click", () => {
+    mostrarMapaCensista(latitudCensista, longitudCensista, radioKilometros); // Reemplaza estos parámetros con los valores correctos
+}); */
 
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
