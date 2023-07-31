@@ -447,70 +447,116 @@ function mostrarTotales(listaCompleta) {
     const divCensadosTotales = document.querySelector("#censadosTotales");
     divCensadosTotales.style.display = "block";
 }
-/*async function obtenerTodasLasCiudades() {
-    const url = "{{censo}}/ciudades.php";
-    const headers = {
-        "Content-Type": "application/json",
-        "apikey": "4171e00ddf882b0c971147a8fb2dce72",
-        "iduser": "6" // Reemplaza este valor con el id del usuario adecuado
-    };
 
-    try {
-        const response = await fetch(url, { headers });
-        if (!response.ok) {
-            throw new Error("Error al obtener las ciudades");
+// Evento para obtener la ubicación del censista cuando se hace clic en el botón
+document.getElementById("btnObtenerUbicacion").addEventListener("click", obtenerUbicacion);
+
+async function obtenerUbicacion() {
+    if (navigator.geolocation) {
+        try {
+            // Si el navegador admite Geolocation, solicitamos la ubicación
+            const posicion = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+
+            // Obtenemos las coordenadas de latitud y longitud
+            const latitudCensista = posicion.coords.latitude;
+            const longitudCensista = posicion.coords.longitude;
+
+            // Llamamos a la función para dibujar el mapa con LeafletJS y señalar las ciudades dentro del radio
+            await dibujarMapa(latitudCensista, longitudCensista);
+        } catch (error) {
+            console.error("Error al obtener la ubicación:", error);
+            alert("No se pudo obtener la ubicación del censista.");
         }
+    } else {
+        alert("Geolocation no es soportado por este navegador.");
+    }
+}
+async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKilometros) {
+    try {
+        const response = await fetch(API_CIUDADES_ENDPOINT, {
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": localStorage.getItem("token"),
+                "iduser": localStorage.getItem("idUsuario"),
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error("No se pudo obtener el listado de ciudades.");
+        }
+
         const data = await response.json();
-        return data.ciudades;
+        const ciudades = data.ciudades;
+
+        // Filtrar las ciudades según la distancia desde la ubicación del censista
+        const ciudadesEnRadio = ciudades.filter((ciudad) => {
+            // Calcular la distancia entre la ubicación del censista y la ciudad
+            const distanciaKm = calcularDistanciaEntreCoordenadas(
+                latitudCensista,
+                longitudCensista,
+                ciudad.latitud,
+                ciudad.longitud
+            );
+
+            // Verificar si la distancia está dentro del radio especificado
+            return distanciaKm <= radioKilometros;
+        });
+
+        return ciudadesEnRadio;
     } catch (error) {
-        console.error(error);
+        console.error("Error al obtener las ciudades:", error);
         return [];
     }
 }
 
-// Función para mostrar el mapa con las ciudades dentro del radio
-function mostrarMapa(latitudCensista, longitudCensista, radioKilometros, ciudades) {
-    const mapaDiv = document.querySelector("#mapa");
-    mapaDiv.innerHTML = ""; // Limpiamos cualquier contenido anterior del div
+// Función para calcular la distancia entre dos conjuntos de coordenadas de latitud y longitud
+function calcularDistanciaEntreCoordenadas(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = degToRad(lat2 - lat1);
+    const dLon = degToRad(lon2 - lon1);
 
-    // Creamos el mapa en la posición del censista
-    const mymap = L.map('mapa').setView([latitudCensista, longitudCensista], 13);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(degToRad(lat1)) * Math.cos(degToRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
-    // Agregamos una capa de mapa base (por ejemplo, OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mymap);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distanciaKm = R * c;
 
-    // Marcador para la ubicación del censista
-    L.marker([latitudCensista, longitudCensista]).addTo(mymap);
+    return distanciaKm;
+}
+// Función para convertir grados a radianes
+function degToRad(grados) {
+    return grados * (Math.PI / 180);
+}
 
-    // Creamos un círculo alrededor del censista con el radio dado en metros
-    L.circle([latitudCensista, longitudCensista], {
-        color: 'blue',
-        fillColor: '#blue',
-        fillOpacity: 0.2,
-        radius: radioKilometros * 1000
-    }).addTo(mymap);
+async function dibujarMapa(latitudCensista, longitudCensista) {
+    // Supongamos que ya tienes definida la variable "radioKilometros" con el valor del radio deseado.
 
-    // Marcadores para las ciudades dentro del radio
-    ciudades.forEach((ciudad) => {
-        L.marker([ciudad.latitud, ciudad.longitud]).addTo(mymap).bindPopup(ciudad.nombre);
+    // Obtenemos las ciudades desde la API
+    const ciudades = await obtenerCiudadesEnRadio(latitudCensista, longitudCensista, 50);
+
+    // Creamos un mapa centrado en la ubicación del censista
+    const mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
+
+    // Agregamos una capa de mapa base (usamos OpenStreetMap en este caso)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapa);
+
+    // Marcamos las ciudades dentro del radio en el mapa
+    ciudades.forEach(ciudad => {
+        L.marker([ciudad.latitud, ciudad.longitud]).addTo(mapa)
+            .bindPopup(ciudad.nombre)
+            .openPopup();
     });
+
+    // Mostramos el contenedor del mapa
+    document.getElementById('mapa').style.display = 'block';
 }
 
-// Función para mostrar el div del mapa y el mapa con las ciudades dentro del radio
-async function mostrarMapaCensista(latitudCensista, longitudCensista, radioKilometros) {
-    const ciudades = await obtenerTodasLasCiudades();
 
-    // Lógica para filtrar las ciudades dentro del radio y mostrar el mapa
-    // ...
-
-    const mapaDiv = document.querySelector("#mapa");
-    mapaDiv.style.display = "block"; // Mostramos el div del mapa
-}
-
-// Asignamos el evento al botón "btnMapa" para que muestre el mapa cuando se haga clic en él
-document.querySelector("#btnCensadosTotales").addEventListener("click", () => {
-    mostrarMapaCensista(latitudCensista, longitudCensista, radioKilometros); // Reemplaza estos parámetros con los valores correctos
-}); */
 
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
