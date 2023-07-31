@@ -203,7 +203,6 @@ function AgregarPersona() {
                 "Content-type": "application/json",
                 "apikey": localStorage.getItem("token"),
                 "iduser": localStorage.getItem("idUsuario"),
-
             },
             body: JSON.stringify({
                 "idUsuario": localStorage.getItem("idUsuario"),
@@ -229,11 +228,11 @@ function AgregarPersona() {
             })
             .catch(handleApiError); // Utilizar la función para manejar errores de la API
     } catch (error) {
-        // Si hay errores en el bloque try-catch, mostrarlos en la consola para depuración
         console.error("Error en try-catch:", error);
         document.querySelector("#errorMessagePersona").innerHTML = error.message;
     }
 }
+// Función para cargar los departamentos en el select
 // Función para cargar los departamentos en el select
 function cargarDepartamentos() {
     fetch(API_DEPARTAMENTOS_ENDPOINT, {
@@ -253,19 +252,27 @@ function cargarDepartamentos() {
             const departamentos = data.departamentos;
             const departamentoSelect = document.querySelector("#departamento");
             departamentoSelect.innerHTML =
-            "<ion-select-option value='' selected disabled>Seleccione un departamento</ion-slect-option>";
+                "<ion-select-option value='' selected disabled>Seleccione un departamento</ion-slect-option>";
             departamentos.forEach((departamento) => {
                 departamentoSelect.innerHTML += `<ion-select-option value="${departamento.id}">${departamento.nombre}</ion-select-option>`;
             });
 
             // Asociar evento de cambio al select de departamentos
-            departamentoSelect.addEventListener("change", () => {
-                const selectedDepartamento = departamentoSelect.value;
+            departamentoSelect.addEventListener("ionChange", (event) => {
+                const selectedDepartamento = event.detail.value;
                 cargarCiudadesPorDepartamento(selectedDepartamento);
             });
         })
         .catch(handleApiError);
 }
+
+// Asignar evento al botón de "Agregar Persona"
+document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
+
+// Llamar a la función cargarDepartamentos al cargar la página "agregarPersona"
+document.addEventListener("ionViewWillEnter", () => {
+    cargarDepartamentos();
+});
 function cargarCiudadesPorDepartamento(idDepartamento) {
     fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
         headers: {
