@@ -464,7 +464,7 @@ async function obtenerUbicacion() {
             const longitudCensista = posicion.coords.longitude;
 
             // Llamamos a la función para dibujar el mapa con LeafletJS y señalar las ciudades dentro del radio
-            await dibujarMapa(latitudCensista, longitudCensista);
+            await dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista);
         } catch (error) {
             console.error("Error al obtener la ubicación:", error);
             alert("No se pudo obtener la ubicación del censista.");
@@ -476,6 +476,7 @@ async function obtenerUbicacion() {
 async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKilometros) {
     try {
         const response = await fetch(API_CIUDADES_ENDPOINT, {
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 "apikey": localStorage.getItem("token"),
@@ -531,33 +532,91 @@ function degToRad(grados) {
     return grados * (Math.PI / 180);
 }
 
-async function dibujarMapa(latitudCensista, longitudCensista) {
-    // Supongamos que ya tienes definida la variable "radioKilometros" con el valor del radio deseado.
+// Función para obtener las personas censadas
+async function obtenerPersonasCensadas() {
+    try {
+        const response = await fetch(API_PERSONAS_ENDPOINT + "?idUsuario=" + localStorage.getItem("idUsuario"), {
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": localStorage.getItem("token"),
+                "iduser": localStorage.getItem("idUsuario")
+            }
+        });
 
-    // Obtenemos las ciudades desde la API
-    const ciudades = await obtenerCiudadesEnRadio(latitudCensista, longitudCensista, 50);
+        if (!response.ok) {
+            throw new Error("No se pudo obtener el listado de personas censadas.");
+        }
 
-    // Creamos un mapa centrado en la ubicación del censista
-    const mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
-
-    // Agregamos una capa de mapa base (usamos OpenStreetMap en este caso)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(mapa);
-
-    // Marcamos las ciudades dentro del radio en el mapa
-    ciudades.forEach(ciudad => {
-        L.marker([ciudad.latitud, ciudad.longitud]).addTo(mapa)
-            .bindPopup(ciudad.nombre)
-            .openPopup();
-    });
-
-    // Mostramos el contenedor del mapa
-    document.getElementById('mapa').style.display = 'block';
+        const data = await response.json();
+        return data.personas;
+    } catch (error) {
+        console.error("Error al obtener las personas censadas:", error);
+        return [];
+    }
 }
 
+// Función para filtrar las ciudades que tienen personas censadas
+function filtrarCiudadesConPersonas(ciudades, personasCensadas) {
+    const ciudadesConPersonas = ciudades.filter(ciudad => {
+        return personasCensadas.some(persona => persona.ciudad === ciudad.id);
+    });
 
+    return ciudadesConPersonas;
+}
 
+async function dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista) {
+    try {
+        // Creamos un mapa centrado en la ubicación del censista
+        const mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
+
+        // Agregamos una capa de mapa base (usamos OpenStreetMap en este caso)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapa);
+
+        // Creamos un icono personalizado rojo para el marcador del censista
+        const redIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            tooltipAnchor: [16, -28],
+            shadowSize: [41, 41]
+        });
+
+        // Marcamos la ubicación del censista en el mapa usando el icono personalizado rojo
+        L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
+            .bindPopup('¡Aquí estoy!')
+            .openPopup();
+
+        // Obtenemos todas las ciudades y personas desde las API
+        const ciudades = await obtenerCiudadesEnRadio(latitudCensista, longitudCensista, 7000);
+        const personasCensadas = await obtenerPersonasCensadas();
+
+        // Filtramos las ciudades que tienen personas censadas
+        const ciudadesConPersonas = filtrarCiudadesConPersonas(ciudades, personasCensadas);
+
+        // Dibujamos un círculo celeste como marca de agua en el mapa con el radio especificado (7000 metros)
+        L.circle([latitudCensista, longitudCensista], {
+            color: 'blue',
+            fillColor: 'blue',
+            fillOpacity: 0.2,
+            radius: 150
+        }).addTo(mapa);
+
+        // Marcamos las ciudades con personas censadas dentro del radio en el mapa con un ícono diferente
+        ciudadesConPersonas.forEach(ciudad => {
+            L.marker([ciudad.latitud, ciudad.longitud]).addTo(mapa)
+                .bindPopup(ciudad.nombre);
+        });
+
+        // Mostramos el contenedor del mapa
+        document.getElementById('mapa').style.display = 'block';
+    } catch (error) {
+        console.error("Error al dibujar el mapa:", error);
+        alert("No se pudo dibujar el mapa.");
+    }
+}
 
 // Función para manejar el evento de cambio en el campo de fecha de nacimiento
 document.querySelector("#fechaNacimiento").addEventListener("change", (event) => {
