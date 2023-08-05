@@ -32,7 +32,7 @@ function autoLogin(){
     inicializar();
     }
     }else{
-        alert("El tiempo de sesión ha expirado. Debe volver a iniciar sesion");
+        alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
         inicializar();
     }
 }
@@ -221,6 +221,9 @@ function AgregarPersona() {
                     document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
                     obtenerListadoPersonas() //revisar si es necesario en ionic
                     LimpiarCamposPersona();
+                } else if(response.status === 401){
+                    alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+                    inicializar();
                 } else {
                     return Promise.reject(response);
                 }
@@ -377,16 +380,21 @@ function eliminarPersona(idPersona) {
         .then((response) => {
             if (response.ok) {
                 return response.json(); // Convertimos la respuesta a JSON
-            } else {
+
+            } else if(response.status === 401){
+                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+                inicializar();
+            }
+            else {
                 throw new Error("Error al eliminar la persona");
             }
         })
+        //revisar este segundo then
         .then((data) => {
             // Verificamos si la respuesta contiene el mensaje de éxito
-            if (data.mensaje) {
-                console.log(data.mensaje); // Mostramos el mensaje en la consola (opcional)
-                obtenerListadoPersonas(); // Actualizamos la lista de personas
+            if (data.mensaje) {obtenerListadoPersonas(); // Actualizamos la lista de personas
             } else {
+                document.querySelector("#errorMessagePersona").innerHTML = data.mensaje;
                 throw new Error("Error al eliminar la persona");
             }
         })
@@ -548,7 +556,6 @@ async function obtenerUbicacion() {
             const longitudCensista = posicion.coords.longitude;
             localStorage.setItem("longitudCensista",longitudCensista);
 
-            
         } catch (error) {
             console.error("Error al obtener la ubicación:", error);
             alert("No se pudo obtener la ubicación del censista.");
