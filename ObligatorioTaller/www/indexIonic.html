@@ -282,25 +282,19 @@
             </ion-toolbar>
           </ion-header>
           <ion-content>
-            <ion-grid>
-              <ion-row>
-                <ion-col>
-                    <style>
-                        #map{height:180px;}
-                    </style>
-                    <div id="mapa" >
-                        Soy el MAPA
-                        <!--Aqui se carga dinamicamnte el mapa con las ciudades donde el censisita hizo al menos un censo-->
-                    </div>
                     <ion-button id="btnObtenerUbicacion">
                         <ion-label>Obtener la ubicacion</ion-label>
                     </ion-button>    
                     <ion-button onclick="atras()">
                         <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
                     </ion-button>
-                </ion-col>
-              </ion-row>
-            </ion-grid>
+                    <style>
+                        #mapa{height:400px;}
+                    </style>
+                    <div id="mapa" >
+                        Soy el MAPA
+                        <!--Aqui se carga dinamicamnte el mapa con las ciudades donde el censisita hizo al menos un censo-->
+                    </div>
           </ion-content>
       </ion-page>
 </div>
