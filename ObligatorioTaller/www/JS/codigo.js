@@ -15,6 +15,9 @@ let token;
 let idUsuario;
 let cacheOcupaciones = [];
 let cachePersonas = [];
+let mapa;
+let marcadoresCiudades = []; // Array para almacenar los marcadores de ciudades
+
 
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
 localStorage.setItem("hayUsuarioLogueado", "false")
@@ -654,19 +657,25 @@ function filtrarCiudadesConPersonas(ciudades, personasCensadas) {
 
     return ciudadesConPersonas;
 }
-
 async function dibujarMapaConCiudadesCensadas() {
     try {
         let radioKilometros = document.querySelector("#radio").value;
         let latitudCensista = localStorage.getItem("latitudCensista");
         let longitudCensista = localStorage.getItem("longitudCensista");
-        // Creamos un mapa centrado en la ubicación del censista
-        let mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
 
-        // Agregamos una capa de mapa base (usamos OpenStreetMap en este caso)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(mapa);
+        // Si el radio es un valor inválido, lanzamos un error
+        if (isNaN(parseFloat(radioKilometros)) || !isFinite(radioKilometros)) {
+            throw new Error("El radio debe ser un número válido.");
+        }
+
+        // Si el mapa no existe, lo creamos y agregamos una capa de mapa base
+        if (!mapa) {
+            mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(mapa);
+        }
 
         // Creamos un icono personalizado rojo para el marcador del censista
         const redIcon = L.icon({
@@ -677,6 +686,12 @@ async function dibujarMapaConCiudadesCensadas() {
             tooltipAnchor: [16, -28],
             shadowSize: [41, 41]
         });
+
+        // Borramos los marcadores de ciudades anteriores
+        marcadoresCiudades.forEach((marcador) => {
+            mapa.removeLayer(marcador);
+        });
+        marcadoresCiudades = [];
 
         // Marcamos la ubicación del censista en el mapa usando el icono personalizado rojo
         L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
@@ -700,8 +715,9 @@ async function dibujarMapaConCiudadesCensadas() {
 
         // Marcamos las ciudades con personas censadas dentro del radio en el mapa con un ícono diferente
         ciudadesConPersonas.forEach(ciudad => {
-            L.marker([ciudad.latitud, ciudad.longitud]).addTo(mapa)
+            const marcador = L.marker([ciudad.latitud, ciudad.longitud]).addTo(mapa)
                 .bindPopup(ciudad.nombre);
+            marcadoresCiudades.push(marcador);
         });
 
         // Mostramos el contenedor del mapa
