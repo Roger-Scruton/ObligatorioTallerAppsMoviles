@@ -512,12 +512,20 @@ function mostrarTotales() {
 
     // Mostrar los totales en la tabla
     const tablaCensadosTotalesBody = document.querySelector("#tablaCensadosTotalesBody");
-    tablaCensadosTotalesBody.innerHTML = `
-        <tr>
-            <td>${totalGeneral}</td>
-            <td>${totalMontevideo}</td>
-            <td>${totalRestoPais}</td>
-        </tr>
+    tablaCensadosTotalesBody.innerHTML = 
+    
+    `
+    <ion-row style="border-bottom: groove;">
+                <ion-col>
+                  <ion-label >${totalGeneral}</ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label >${totalMontevideo}</ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label >${totalRestoPais}</ion-label>
+                </ion-col>
+    </ion-row>
     `;
 
     // Mostrar el div de censados totales
@@ -733,6 +741,9 @@ function OcultarDivs() {
     document.querySelector("#registro").style.display = "none";
     document.querySelector("#agregarPersona").style.display = "none";
     document.querySelector("#listadoPersonas").style.display = "none";
+    document.querySelector("#censadosTotales").style.display = "none";
+    document.querySelector("#MapaCiudadesCensadas").style.display = "none";
+    
 }
 function OcultarBotones(showButtons) {
     if (showButtons) {
@@ -817,6 +828,10 @@ function MostrarOcultarDivs() {
             break;
         case "btnListadoPersonas": document.querySelector("#listadoPersonas").style.display = "block";
             break;
+        case "btnCensadosTotales": document.querySelector("#censadosTotales").style.display = "block";
+            break;
+        case "btnMapa": document.querySelector("#mapa").style.display = "block";
+            break;
     }
 }
 // Función para manejar los errores de la API
@@ -858,6 +873,15 @@ function navegar(event){
     else if (ruta == "/listadoPersonas") {
         document.querySelector("#listadoPersonas").style.display = "block";
         //document.querySelector("#listado").style.display = "block";
+        document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras' slot='start'><ion-icon name='arrow-undo'></ion-icon>Volver</ion-button>"
+    }
+    else if (ruta == "/censadosTotales") {
+        document.querySelector("#censadosTotales").style.display = "block";
+        document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras' slot='start'><ion-icon name='arrow-undo'></ion-icon>Volver</ion-button>"
+    }
+    else if (ruta == "/MapaCiudadesCensadas") {
+        document.querySelector("#MapaCiudadesCensadas").style.display = "block";
+        //document.querySelector("#mapa").style.display = "block"
         document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras' slot='start'><ion-icon name='arrow-undo'></ion-icon>Volver</ion-button>"
     }
     else{
