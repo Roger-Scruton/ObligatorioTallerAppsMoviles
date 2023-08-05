@@ -534,8 +534,7 @@ function mostrarTotales() {
 }
 
 
-// Evento para obtener la ubicación del censista cuando se hace clic en el botón
-document.getElementById("btnObtenerUbicacion").addEventListener("click", obtenerUbicacion);
+
 
 async function obtenerUbicacion() {
     if (navigator.geolocation) {
@@ -757,11 +756,7 @@ function OcultarBotones(showButtons) {
         document.querySelector("#btnRegistro").style.display = "none";
     }
 }
-// Nueva función para mostrar el div agregarPersona y ocultar los demás botones del div divInicioUsuarioLogueado
-/*function MostrarAgregarPersona() {
-    OcultarDivs();
-    document.querySelector("#agregarPersona").style.display = "block";
-}*/
+
 function AgregarEventos() {
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange", navegar);
     //document.querySelector("#btnInicio").addEventListener("click", MostrarOcultarDivs);
@@ -774,6 +769,8 @@ function AgregarEventos() {
     document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
     document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
+    // Evento para obtener la ubicación del censista cuando se hace clic en el botón
+    document.getElementById("btnObtenerUbicacion").addEventListener("click", obtenerUbicacion);
     document.querySelector("#btnListadoPersonas").addEventListener("click",() => {
         cargarOcupaciones();
         cargarSelectOcupaciones();
