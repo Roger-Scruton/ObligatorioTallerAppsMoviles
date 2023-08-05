@@ -11,7 +11,8 @@ const API_OCUPACIONES_ENDPOINT = API_BASE_URL + "ocupaciones.php";
 let token;
 let idUsuario;
 let cacheOcupaciones = [];
-let cachePersonas = []
+let cachePersonas = [];
+
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
 localStorage.setItem("hayUsuarioLogueado", "false")
 }
@@ -28,8 +29,8 @@ function autoLogin(){
     inicializar();
     }
     }else{
+        alert("El tiempo de sesión ha expirado. Debe volver a iniciar sesion");
         inicializar();
-        document.querySelector("#errorMessage").innerHTML = "El tiempo a expirado debe volver a iniciar sesion";
     }
 }
 function inicializar() {
@@ -214,6 +215,7 @@ function AgregarPersona() {
                 if (response.ok) {
                     // Mostrar mensaje de registro exitoso
                     document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
+                    obtenerListadoPersonas()
                     LimpiarCamposPersona();
                 } else {
                     return Promise.reject(response);
@@ -292,6 +294,13 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
 
 // Función para cargar las ocupaciones en el select
 function cargarOcupaciones() {
+    // Intentamos recuperar cacheOcupaciones del Local Storage
+    const cachedData = localStorage.getItem("cacheOcupaciones");
+    if (cachedData) {
+        cacheOcupaciones = JSON.parse(cachedData);
+        cargarSelectOcupaciones();
+    }
+
     fetch(API_OCUPACIONES_ENDPOINT, {
         headers: {
             "Content-Type": "application/json",
@@ -306,8 +315,11 @@ function cargarOcupaciones() {
             return response.json();
         })
         .then((data) => {
-            cacheOcupaciones = data; //Usado para cargar el select implementado para el filtro del listado de personas por ocupaciones
-            cargarSelectOcupaciones()
+            cacheOcupaciones = data;
+            // Guardamos cacheOcupaciones en el Local Storage
+            localStorage.setItem("cacheOcupaciones", JSON.stringify(cacheOcupaciones));
+
+            cargarSelectOcupaciones();
             const ocupacionSelect = document.querySelector("#ocupacion");
             ocupacionSelect.innerHTML =
                 "<option value='' selected disabled>Seleccione una ocupación</option>";
@@ -322,8 +334,8 @@ function obtenerListadoPersonas() {
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
-            "iduser": localStorage.getItem("idUsuario")
-        }
+            "iduser": localStorage.getItem("idUsuario"),
+        },
     })
         .then((response) => {
             if (!response.ok) {
@@ -332,12 +344,14 @@ function obtenerListadoPersonas() {
             return response.json();
         })
         .then((data) => {
-            cachePersonas = data.personas;
+            // Guardamos cachePersonas en el Local Storage para futuras referencias
+            localStorage.setItem("cachePersonas", JSON.stringify(data.personas));
             // Llamamos a la función para filtrar y mostrar la tabla
-            filtrarPersonasPorOcupacion(data.personas);
+            filtrarPersonasPorOcupacion();
         })
         .catch(handleApiError);
 }
+
 function eliminarPersona(idPersona) {
     fetch(API_PERSONAS_ENDPOINT + "?idCenso=" + idPersona, {
         method: "DELETE",
@@ -365,16 +379,25 @@ function eliminarPersona(idPersona) {
         })
         .catch(handleApiError); // Utilizar la función para manejar errores de la API
 }
-function filtrarPersonasPorOcupacion(listaCompleta) {
+function filtrarPersonasPorOcupacion() {
     const ocupacionSelect = document.querySelector("#selectOcupacion");
     const filtroOcupacionId = ocupacionSelect.value;
 
     const tablaInicioBody = document.querySelector("#tablaInicioBody");
     tablaInicioBody.innerHTML = ""; // Limpiamos la tabla antes de agregar los datos
 
+    // Obtenemos los datos del cache del Local Storage
+    const cachePersonas = JSON.parse(localStorage.getItem("cachePersonas"));
+
+    if (!cachePersonas) {
+        // Si no hay datos en el cache, volvemos a cargar desde la API
+        obtenerListadoPersonas();
+        return;
+    }
+
     if (filtroOcupacionId === "") {
-        // Si no hay selección en el filtro, mostramos la tabla completa
-        listaCompleta.forEach((persona) => {
+        // Si no hay selección en el filtro, mostramos la tabla completa desde el cache
+        cachePersonas.forEach((persona) => {
             tablaInicioBody.innerHTML += `
                 <tr>
                     <td>${persona.nombre}</td>
@@ -385,8 +408,10 @@ function filtrarPersonasPorOcupacion(listaCompleta) {
             `;
         });
     } else {
-        // Si hay selección en el filtro, mostramos solo las personas con la ocupación seleccionada
-        const personasFiltradas = listaCompleta.filter((persona) => persona.ocupacion === parseInt(filtroOcupacionId));
+        // Si hay selección en el filtro, mostramos solo las personas con la ocupación seleccionada desde el cache
+        const personasFiltradas = cachePersonas.filter(
+            (persona) => persona.ocupacion === parseInt(filtroOcupacionId)
+        );
         personasFiltradas.forEach((persona) => {
             tablaInicioBody.innerHTML += `
                 <tr>
@@ -401,31 +426,48 @@ function filtrarPersonasPorOcupacion(listaCompleta) {
 
     // Asignamos el evento de cambio al select de ocupaciones para actualizar la tabla al cambiar la selección
     ocupacionSelect.addEventListener("change", () => {
-        filtrarPersonasPorOcupacion(listaCompleta);
+        filtrarPersonasPorOcupacion();
     });
 }
+
 function cargarSelectOcupaciones() {
     const ocupacionSelect = document.querySelector("#selectOcupacion");
     ocupacionSelect.innerHTML = "<option value=''>Todas las ocupaciones</option>";
 
-    // Agregar las opciones de ocupaciones al select
+    // Recuperamos los datos del Local Storage y verificamos si hay ocupaciones guardadas
+    const cachedData = localStorage.getItem("cacheOcupaciones");
+    const cacheOcupaciones = cachedData ? JSON.parse(cachedData) : { ocupaciones: [] };
+
+    // Agregamos las opciones de ocupaciones al select
     cacheOcupaciones.ocupaciones.forEach((ocupacion) => {
         ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
     });
 
-    // Asignar el evento para filtrar al cambiar la ocupación seleccionada
+    // Asignamos el evento para filtrar al cambiar la ocupación seleccionada
     ocupacionSelect.addEventListener("change", function () {
+        // Aquí puedes agregar la lógica para filtrar según la ocupación seleccionada
     });
 }
 
+
 //CORREGIR, existe un endpint en el API que ya te calcula el total. Luego solo hay que filtrar montevideo e interior.
-function mostrarTotales(listaCompleta) {
-    const totalGeneral = listaCompleta.length;
+//Está bien así. Se revisó el endpoint totalCensados.php y solo devuelve el total de censados para TODA la API, no hay forma de discernir entre usuarios y menos por departamento o ciudad.
+function mostrarTotales() {
+    // Obtenemos los datos del cache del Local Storage
+    const cachePersonas = JSON.parse(localStorage.getItem("cachePersonas"));
+
+    if (!cachePersonas) {
+        // Si no hay datos en el cache, volvemos a cargar desde la API
+        obtenerListadoPersonas();
+        return;
+    }
+
+    const totalGeneral = cachePersonas.length;
     let totalMontevideo = 0;
     let totalRestoPais = 0;
 
     // Contar la cantidad de personas de Montevideo y del resto del país
-    listaCompleta.forEach((persona) => {
+    cachePersonas.forEach((persona) => {
         if (persona.ciudad === 129833) {
             totalMontevideo++;
         } else {
@@ -447,6 +489,7 @@ function mostrarTotales(listaCompleta) {
     const divCensadosTotales = document.querySelector("#censadosTotales");
     divCensadosTotales.style.display = "block";
 }
+
 
 // Evento para obtener la ubicación del censista cuando se hace clic en el botón
 document.getElementById("btnObtenerUbicacion").addEventListener("click", obtenerUbicacion);
@@ -692,7 +735,7 @@ function AgregarEventos() {
     });
 
     document.querySelector("#btnCensadosTotales").addEventListener("click", () => {
-        mostrarTotales(cachePersonas);
+        mostrarTotales();
     });
 }
 function Inicio(showButtons) {
