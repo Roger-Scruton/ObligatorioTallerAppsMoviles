@@ -738,10 +738,10 @@ function LimpiarCamposPersona() {
 function OcultarDivs() {
     document.querySelector("#login").style.display = "none";
     document.querySelector("#registro").style.display = "none";
-    document.querySelector("#agregarPersona").style.display = "none";
-    document.querySelector("#listadoPersonas").style.display = "none";
-    document.querySelector("#censadosTotales").style.display = "none";
-    document.querySelector("#MapaCiudadesCensadas").style.display = "none";
+    //document.querySelector("#agregarPersona").style.display = "none";
+    //document.querySelector("#listadoPersonas").style.display = "none";
+    //document.querySelector("#censadosTotales").style.display = "none";
+    //document.querySelector("#MapaCiudadesCensadas").style.display = "none";
     
 }
 function OcultarBotones(showButtons) {
@@ -820,13 +820,6 @@ function MostrarOcultarDivs() {
 
         case "btnCerrarSesion": OcultarBotones(false);
             break;
-
-        case "btnAgregarPersona": document.querySelector("#agregarPersona").style.display = "block";
-            break;
-        case "btnListadoPersonas": document.querySelector("#listadoPersonas").style.display = "block";
-            break;
-        case "btnCensadosTotales": document.querySelector("#censadosTotales").style.display = "block";
-            break;
         case "btnMapa": document.querySelector("#mapa").style.display = "block";
             break;
     }
@@ -850,7 +843,7 @@ function atras(){
 }
 
 function navegar(event){
-    OcultarDivs();
+    OcultarPaginas()
     let ruta = event.detail.to;
     if (ruta == "/") {
         document.querySelector("#pageLogin").style.display = "block";
@@ -858,7 +851,6 @@ function navegar(event){
     else if (ruta == "/pageRegistro") {
         document.querySelector("#registro").style.display="block";
         //document.querySelector("#pageRegistro").style.display = "block";
-
     }
     else if (ruta == "/agregarPersona") {
         document.querySelector("#agregarPersona").style.display = "block";
@@ -883,5 +875,17 @@ function navegar(event){
     }
     else{
         CerrarSesion();
+    }
+}
+
+function OcultarPaginas() {
+    let pages = document.getElementsByClassName("ion-page");
+    for (let i = 0; i < pages.length; i++) {
+
+        if (pages[i].id != null && pages[i].id !== "") {
+            document.querySelector("#" + pages[i].id).style.display = "none";
+        }
+
+
     }
 }
