@@ -85,7 +85,7 @@
                                 <ion-label>CensadosTotales</ion-label>
                             </ion-item>
                             <ion-item id="btnMapa" href="/MapaCiudadesCensadas" >
-                                <ion-icon name="document" slot="start"></ion-icon>
+                                <ion-icon name="map-outline" slot="start"></ion-icon>
                                 <ion-label>MapaCiudadesCensadas</ion-label>
                             </ion-item>
                         </ion-list>
@@ -110,7 +110,7 @@
                 <ion-row>
                     <ion-input id="nombreUsuario" type="text" placeholder="Usuario"></ion-input>
                     <ion-input id="password" type="password" placeholder="contraseña"></ion-input>
-                    <ion-button id="btnLogin">Ingreso</ion-button>
+                    <ion-button id="btnLogin" expand="full">Ingreso</ion-button>
                     <ion-title id="errorMessage"></ion-title>
                 </ion-row>
             </ion-grid>
@@ -137,7 +137,7 @@
                             <ion-input id="usuario" type="text" placeholder="Nombre de usuario"></ion-input>
                             <ion-input id="passRegistro" type="password" placeholder="contraseña"></ion-input>
                             <ion-input id="pass2Registro" type="text" placeholder="Verificacion de password"></ion-input>
-                            <ion-button id="btnRegistroUsuario">Registrarse</ion-button>
+                            <ion-button id="btnRegistroUsuario" size="small">Registrarse</ion-button>
                             <ion-title id="errorMessageRegistro"></ion-title>
                         </ion-form>
                     </ion-col>
@@ -171,7 +171,7 @@
                     <ion-select id="ocupacion" aria-label="Ocupacion" interface="popover" placeholder="Ocupacion">
                         <!-- Aquí se llenará dinámicamente el listado de ocupaciones obtenido desde la API -->
                     </ion-select>
-                    <ion-button id="btnEnviarDatosPersona">Agregar Persona</ion-button><div id="divAtras"></div>
+                    <ion-button id="btnEnviarDatosPersona" size="small">Agregar Persona</ion-button><div id="divAtras"></div>
                     <ion-title id="errorMessagePersona"></ion-title>
                 </ion-row>
             </ion-grid>
@@ -225,7 +225,7 @@
                         </ion-col>
                     </ion-row>-->
                   </div>
-                  <ion-button onclick="atras()">
+                  <ion-button onclick="atras()" size="small">
                     <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
                   </ion-button>
                 </div>
@@ -263,7 +263,7 @@
                         <div id="tablaCensadosTotalesBody"></div>
                         <!--Aqui se carga dinamicamnte con los datos de los censados totales -->
                     </div>
-                    <ion-button onclick="atras()">
+                    <ion-button onclick="atras()" size="small">
                       <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
                     </ion-button>
                   </div>
@@ -282,10 +282,12 @@
             </ion-toolbar>
           </ion-header>
           <ion-content>
-                    <ion-button id="btnObtenerUbicacion">
+                    <ion-label>Ingrese un radio en km</ion-label>
+                    <ion-input id="radio" type="number" ></ion-input>
+                    <ion-button id="btnDibujarMapa" size="small">
                         <ion-label>Obtener la ubicacion</ion-label>
                     </ion-button>    
-                    <ion-button onclick="atras()">
+                    <ion-button onclick="atras()" size="small">
                         <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
                     </ion-button>
                     <style>

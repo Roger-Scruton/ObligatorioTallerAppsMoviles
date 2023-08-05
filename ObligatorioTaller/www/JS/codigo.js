@@ -534,8 +534,6 @@ function mostrarTotales() {
 }
 
 
-
-
 async function obtenerUbicacion() {
     if (navigator.geolocation) {
         try {
@@ -546,10 +544,11 @@ async function obtenerUbicacion() {
 
             // Obtenemos las coordenadas de latitud y longitud
             const latitudCensista = posicion.coords.latitude;
+            localStorage.setItem("latitudCensista",latitudCensista);
             const longitudCensista = posicion.coords.longitude;
+            localStorage.setItem("longitudCensista",longitudCensista);
 
-            // Llamamos a la función para dibujar el mapa con LeafletJS y señalar las ciudades dentro del radio
-            await dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista);
+            
         } catch (error) {
             console.error("Error al obtener la ubicación:", error);
             alert("No se pudo obtener la ubicación del censista.");
@@ -649,10 +648,13 @@ function filtrarCiudadesConPersonas(ciudades, personasCensadas) {
     return ciudadesConPersonas;
 }
 
-async function dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista) {
+async function dibujarMapaConCiudadesCensadas() {
     try {
+        let radioKilometros = document.querySelector("#radio").value;
+        let latitudCensista = localStorage.getItem("latitudCensista");
+        let longitudCensista = localStorage.getItem("longitudCensista");
         // Creamos un mapa centrado en la ubicación del censista
-        const mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
+        let mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
 
         // Agregamos una capa de mapa base (usamos OpenStreetMap en este caso)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -675,7 +677,7 @@ async function dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista)
             .openPopup();
 
         // Obtenemos todas las ciudades y personas desde las API
-        const ciudades = await obtenerCiudadesEnRadio(latitudCensista, longitudCensista, 7000);
+        const ciudades = await obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKilometros);
         const personasCensadas = await obtenerPersonasCensadas();
 
         // Filtramos las ciudades que tienen personas censadas
@@ -770,7 +772,8 @@ function AgregarEventos() {
     document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
     document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
     // Evento para obtener la ubicación del censista cuando se hace clic en el botón
-    document.getElementById("btnObtenerUbicacion").addEventListener("click", obtenerUbicacion);
+    document.getElementById("btnMapa").addEventListener("click",obtenerUbicacion );
+    document.getElementById("btnDibujarMapa").addEventListener("click", dibujarMapaConCiudadesCensadas);
     document.querySelector("#btnListadoPersonas").addEventListener("click",() => {
         cargarOcupaciones();
         cargarSelectOcupaciones();
