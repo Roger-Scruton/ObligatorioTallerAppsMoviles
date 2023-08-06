@@ -19,6 +19,7 @@
     <!--Componente de Ruteo-->
 <ion-router id="ruteo">
     <ion-route url="/" component="pageLogin"></ion-route>
+    <ion-route url="/login" component="login"></ion-route>
     <ion-route url="/pageRegistro" component="pageRegistro"></ion-route>
     <ion-route url="/pageCerrarSesion" component="pageCerrarSesion"></ion-route>
     <ion-route url="/agregarPersona" component="agregarPersona"></ion-route>
@@ -65,7 +66,7 @@
         </ion-header>
         <ion-content>
             <!--Usuario sin loguearse-->
-            <div id="divInicioUsuarioDesconocido">Inicie sesion</div>
+            <!--<div id="divInicioUsuarioDesconocido">Inicie sesion</div>-->
             <!--Usuario logueado-->
             <div id="divInicioUsuarioLogueado">
             <ion-grid>
@@ -129,7 +130,7 @@
         <ion-content>
             <ion-grid>
                 <ion-row>
-                    <ion-col offset-md="4">
+                    <ion-col>
                         <ion-form>
                             <ion-input id="nombre" type="text" placeholder="Nombre"></ion-input>
                             <ion-input id="apellido" type="text" placeholder="Apellido"></ion-input>
@@ -171,7 +172,7 @@
                     <ion-select id="ocupacion" aria-label="Ocupacion" interface="popover" placeholder="Ocupacion">
                         <!-- Aquí se llenará dinámicamente el listado de ocupaciones obtenido desde la API -->
                     </ion-select>
-                    <ion-button id="btnEnviarDatosPersona" size="small">Agregar Persona</ion-button><div id="divAtras"></div>
+                    <ion-button id="btnEnviarDatosPersona" size="small">Agregar Persona</ion-button><ion-button onclick="atras()"><ion-icon name='arrow-undo' slot='icon-only'></ion-icon></ion-button>
                     <ion-title id="errorMessagePersona"></ion-title>
                 </ion-row>
             </ion-grid>
@@ -282,7 +283,7 @@
             </ion-toolbar>
           </ion-header>
           <ion-content>
-                    <ion-label>Ingrese un radio en km</ion-label>
+                    <ion-label >Ingrese un radio en km</ion-label>
                     <ion-input id="radio" type="number" ></ion-input>
                     <ion-button id="btnDibujarMapa" size="small">
                         <ion-label>Obtener la ubicacion</ion-label>

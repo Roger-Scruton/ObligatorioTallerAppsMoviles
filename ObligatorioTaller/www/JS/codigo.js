@@ -176,12 +176,14 @@ function IniciarSesion() {
 // Función para cerrar sesión
 function CerrarSesion() {
     // Limpiar el token y el estado de sesión del localStorage
-    localStorage.setItem("token", "");
-    localStorage.setItem("hayUsuarioLogueado", "false");
+    localStorage.clear();
+    //localStorage.setItem("token", "");
+    //localStorage.setItem("hayUsuarioLogueado", "false");
     // Mostrar la sección de inicio de sesión
+    LimpiarCampos();
     Inicio(true);
     // Limpiar los campos de usuario y contraseña
-    LimpiarCampos();
+    
 }
 // Función para agregar una nueva persona
 function AgregarPersona() {
@@ -763,11 +765,8 @@ function LimpiarCamposPersona() {
 function OcultarDivs() {
     document.querySelector("#login").style.display = "none";
     document.querySelector("#registro").style.display = "none";
-    //document.querySelector("#agregarPersona").style.display = "none";
-    //document.querySelector("#listadoPersonas").style.display = "none";
-    //document.querySelector("#censadosTotales").style.display = "none";
-    //document.querySelector("#MapaCiudadesCensadas").style.display = "none";
-    
+    document.querySelector("#listado").style.display = "none";
+    document.querySelector("#listadoCensados").style.display = "none";
 }
 function OcultarBotones(showButtons) {
     if (showButtons) {
@@ -818,17 +817,18 @@ function Inicio(showButtons) {
     OcultarBotones(showButtons);
     AgregarEventos();
     //document.querySelector("#login").style.display = "block";
-    if (localStorage.getItem("hayUsuarioLogueado") === "false") {
-        document.querySelector("#divInicioUsuarioDesconocido").style.display = "block";
-        //para ionic
+    if (localStorage.getItem("token") != null) {
         ruteo.push("/")
-        document.querySelector("#divInicioUsuarioLogueado").style.display = "none";
+        //document.querySelector("#login").style.display = "none";
+        document.querySelector("#divInicioUsuarioLogueado").style.display = "block";
+        //document.querySelector("#login").style.display = "none";
     }
     else {
-        document.querySelector("#divInicioUsuarioDesconocido").style.display = "none";
-        document.querySelector("#divInicioUsuarioLogueado").style.display = "block";
-        document.querySelector("#login").style.display = "none";
-
+        
+        //para cargar la pagina en ionic
+        ruteo.push("/login")
+        //document.querySelector("#login").style.display = "block";
+        document.querySelector("#divInicioUsuarioLogueado").style.display = "none";
     }
 }
 
@@ -846,7 +846,11 @@ function MostrarOcultarDivs() {
 
         case "btnCerrarSesion": OcultarBotones(false);
             break;
-        case "btnMapa": document.querySelector("#mapa").style.display = "block";
+        /*case "btnMapa": document.querySelector("#mapa").style.display = "block";
+            break;*/
+        case "btnListadoPersonas": document.querySelector("#listado").style.display = "block";
+            break;
+        case "btnCensadosTotales": document.querySelector("#listadoCensados").style.display = "block";
             break;
     }
 }
@@ -874,30 +878,31 @@ function navegar(event){
     if (ruta == "/") {
         document.querySelector("#pageLogin").style.display = "block";
     }
+    else if (ruta == "/login") {
+        document.querySelector("#login").style.display="block";
+        //document.querySelector("#pageRegistro").style.display = "block";
+    }
     else if (ruta == "/pageRegistro") {
         document.querySelector("#registro").style.display="block";
         //document.querySelector("#pageRegistro").style.display = "block";
     }
     else if (ruta == "/agregarPersona") {
         document.querySelector("#agregarPersona").style.display = "block";
-        document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras' slot='start'><ion-icon name='arrow-undo'></ion-icon>Volver</ion-button>"
     }
     else if (ruta == "/pageDetalle") {
         document.querySelector("#pageDetalle").style.display = "block";
     }
     else if (ruta == "/listadoPersonas") {
         document.querySelector("#listadoPersonas").style.display = "block";
-        //document.querySelector("#listado").style.display = "block";
-        document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras' slot='start'><ion-icon name='arrow-undo'></ion-icon>Volver</ion-button>"
+        document.querySelector("#listado").style.display = "block";
     }
     else if (ruta == "/censadosTotales") {
         document.querySelector("#censadosTotales").style.display = "block";
-        document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras' slot='start'><ion-icon name='arrow-undo'></ion-icon>Volver</ion-button>"
+        document.querySelector("#listadoCensados").style.display = "block";
     }
     else if (ruta == "/MapaCiudadesCensadas") {
         document.querySelector("#MapaCiudadesCensadas").style.display = "block";
-        //document.querySelector("#mapa").style.display = "block"
-        document.querySelector("#divAtras").innerHTML="<ion-button onclick=atras() id='btnAtras' slot='start'><ion-icon name='arrow-undo'></ion-icon>Volver</ion-button>"
+        //document.querySelector("#mapa").style.display = "block"    
     }
     else{
         CerrarSesion();
