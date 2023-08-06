@@ -18,6 +18,7 @@ let cachePersonas = [];
 let mapa;
 let marcadoresCiudades = []; // Array para almacenar los marcadores de ciudades
 let circuloRadio;
+let alertShown = false;
 
 
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
@@ -96,6 +97,7 @@ function registro() {
                 localStorage.setItem("token", token);
                 localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
+                alertShown = false;
                 // Mostrar la sección de usuario logueado
                 inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
@@ -145,6 +147,7 @@ function iniciarSesion() {
                         return Promise.reject(data);
                     });
                 } else if (response.ok) {
+                    alertShown = false;
                     return response.json();
                 }
 
@@ -227,16 +230,14 @@ function agregarPersona() {
             })
         })
             .then((response) => {
-                if(response.status === 401){
-                    alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                    cerrarSesion();
+                if (response.status === 401) {
+                        return displayAlert();
                 } else if (response.ok) {
                     // Mostrar mensaje de registro exitoso
                     document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
                     obtenerListadoPersonas() //revisar si es necesario en ionic
                     limpiarCamposPersona();
-                }
-                else {
+                } else {
                     return Promise.reject(response);
                 }
             })
@@ -263,8 +264,7 @@ function cargarDepartamentos() {
     })
         .then((response) => {
             if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                cerrarSesion();
+                return displayAlert();
             } else if (!response.ok) {
                 throw new Error("Error al obtener los departamentos");
             }
@@ -304,8 +304,7 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
     })
         .then(response => {
             if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                cerrarSesion();
+                return displayAlert();
             } else if (!response.ok) {
                 throw new Error("Error al obtener las ciudades");
             }
@@ -344,8 +343,7 @@ function cargarOcupaciones() {
     })
         .then((response) => {
             if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                cerrarSesion();
+                return displayAlert();
             }else if (!response.ok) {
                 throw new Error("Error al obtener las ocupaciones");
             }
@@ -377,9 +375,8 @@ function obtenerListadoPersonas() {
     })
         .then((response) => {
           if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                cerrarSesion();
-            } else if (!response.ok) {
+              return displayAlert();
+          } else if (!response.ok) {
                 throw new Error("Error al obtener el listado de personas");
             }
             return response.json();
@@ -407,8 +404,7 @@ function eliminarPersona(idPersona) {
                 return response.json(); // Convertimos la respuesta a JSON
 
             } else if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                cerrarSesion();
+                return displayAlert();
             } else if (response.status === 404) {
                 return response.json().then((data) => {
                     document.querySelector("#errorMessageCensados").innerHTML = data.mensaje;
@@ -599,8 +595,7 @@ async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKi
             },
         });
         if(response.status === 401){
-            alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-            cerrarSesion();
+            return displayAlert();
         }else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de ciudades.");
         }
@@ -661,8 +656,7 @@ async function obtenerPersonasCensadas() {
             }
         });
         if(response.status === 401){
-            alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-            cerrarSesion();
+            return displayAlert();
         } else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de personas censadas.");
         }
@@ -945,7 +939,15 @@ function ocultarPaginas() {
         if (pages[i].id != null && pages[i].id !== "") {
             document.querySelector("#" + pages[i].id).style.display = "none";
         }
-
-
+    }
+}
+function displayAlert(){
+    if (alertShown === false) {
+        alertShown = true;
+        alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+        cerrarSesion();
+    }else {
+        alertShown = true;
+        cerrarSesion();
     }
 }
