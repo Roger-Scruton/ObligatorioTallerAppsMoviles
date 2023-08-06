@@ -17,6 +17,7 @@ let cacheOcupaciones = [];
 let cachePersonas = [];
 let mapa;
 let marcadoresCiudades = []; // Array para almacenar los marcadores de ciudades
+let circuloRadio;
 
 
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
@@ -702,6 +703,17 @@ async function dibujarMapaConCiudadesCensadas() {
             }).addTo(mapa);
         }
 
+        // Borramos los marcadores de ciudades anteriores
+        marcadoresCiudades.forEach((marcador) => {
+            mapa.removeLayer(marcador);
+        });
+        marcadoresCiudades = [];
+
+        // Borramos el círculo de radio anterior, si existe
+        if (circuloRadio) {
+            mapa.removeLayer(circuloRadio);
+        }
+
         // Creamos un icono personalizado rojo para el marcador del censista
         const redIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -711,12 +723,6 @@ async function dibujarMapaConCiudadesCensadas() {
             tooltipAnchor: [16, -28],
             shadowSize: [41, 41]
         });
-
-        // Borramos los marcadores de ciudades anteriores
-        marcadoresCiudades.forEach((marcador) => {
-            mapa.removeLayer(marcador);
-        });
-        marcadoresCiudades = [];
 
         // Marcamos la ubicación del censista en el mapa usando el icono personalizado rojo
         L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
@@ -731,7 +737,7 @@ async function dibujarMapaConCiudadesCensadas() {
         const ciudadesConPersonas = filtrarCiudadesConPersonas(ciudades, personasCensadas);
 
         // Dibujamos un círculo celeste como marca de agua en el mapa con el radio especificado (7000 metros)
-        L.circle([latitudCensista, longitudCensista], {
+        circuloRadio = L.circle([latitudCensista, longitudCensista], {
             color: 'blue',
             fillColor: 'blue',
             fillOpacity: 0.2,
