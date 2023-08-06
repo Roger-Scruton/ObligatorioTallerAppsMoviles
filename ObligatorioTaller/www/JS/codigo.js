@@ -19,6 +19,7 @@ let mapa;
 let marcadoresCiudades = []; // Array para almacenar los marcadores de ciudades
 let circuloRadio;
 let alertShown = false;
+let marcadorCensista;
 
 
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
@@ -718,8 +719,13 @@ async function dibujarMapaConCiudadesCensadas() {
             shadowSize: [41, 41]
         });
 
+        // Borramos el marcador del censista anterior, si existe
+        if (marcadorCensista) {
+            mapa.removeLayer(marcadorCensista);
+        }
+
         // Marcamos la ubicación del censista en el mapa usando el icono personalizado rojo
-        L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
+        marcadorCensista = L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
             .bindPopup('¡Aquí estoy!')
             .openPopup();
 
