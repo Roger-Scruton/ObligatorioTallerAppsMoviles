@@ -29,14 +29,14 @@ function autoLogin(){
     //validamos que el token no sea nulo
     if(localStorage.getItem("token") != null){
         //si existe token y el usuario esta logueado mostramos su interfaz sino inicializamos
-    if(localStorage.getItem("token") != "" && hayUsuarioLogueado === "true" ){
+    if(hayUsuarioLogueado === "true"){
         Inicio(false);
     }else{
     inicializar();
     }
     }else{
         alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-        inicializar();
+        CerrarSesion();
     }
 }
 function inicializar() {
@@ -183,7 +183,7 @@ function CerrarSesion() {
     LimpiarCampos();
     Inicio(true);
     // Limpiar los campos de usuario y contraseña
-    
+
 }
 // Función para agregar una nueva persona
 function AgregarPersona() {
@@ -209,7 +209,6 @@ function AgregarPersona() {
                 "Content-type": "application/json",
                 "apikey": localStorage.getItem("token"),
                 "iduser": localStorage.getItem("idUsuario"),
-
             },
             body: JSON.stringify({
                 "idUsuario": localStorage.getItem("idUsuario"),
@@ -228,7 +227,7 @@ function AgregarPersona() {
                     LimpiarCamposPersona();
                 } else if(response.status === 401){
                     alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                    inicializar();
+                    CerrarSesion();
                 } else {
                     return Promise.reject(response);
                 }
@@ -247,6 +246,7 @@ function AgregarPersona() {
 // Función para cargar los departamentos en el select
 function cargarDepartamentos() {
     fetch(API_DEPARTAMENTOS_ENDPOINT, {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -254,7 +254,10 @@ function cargarDepartamentos() {
         },
     })
         .then((response) => {
-            if (!response.ok) {
+            if(response.status === 401){
+                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+                CerrarSesion();
+            } else if (!response.ok) {
                 throw new Error("Error al obtener los departamentos");
             }
             return response.json();
@@ -276,10 +279,7 @@ function cargarDepartamentos() {
         })
         .catch(handleApiError);
 }
-//Revisar si está ok
-// Asignar evento al botón de "Agregar Persona"
-document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
-
+//A REVISAR
 // Llamar a la función cargarDepartamentos al cargar la página "agregarPersona"
 document.addEventListener("ionViewWillEnter", () => {
     cargarDepartamentos();
@@ -287,6 +287,7 @@ document.addEventListener("ionViewWillEnter", () => {
 
 function cargarCiudadesPorDepartamento(idDepartamento) {
     fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -294,7 +295,10 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
         }
     })
         .then(response => {
-            if (!response.ok) {
+            if(response.status === 401){
+                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+                CerrarSesion();
+            } else if (!response.ok) {
                 throw new Error("Error al obtener las ciudades");
             }
             return response.json();
@@ -320,9 +324,10 @@ function cargarOcupaciones() {
     if (cachedData) {
         cacheOcupaciones = JSON.parse(cachedData);
         cargarSelectOcupaciones();
-        //ver de cortar el flujo por acá
+        //ver de cortar el flujo por acá //REVISAR
     }
     fetch(API_OCUPACIONES_ENDPOINT, {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -330,7 +335,10 @@ function cargarOcupaciones() {
         },
     })
         .then((response) => {
-            if (!response.ok) {
+            if(response.status === 401){
+                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+                CerrarSesion();
+            }else if (!response.ok) {
                 throw new Error("Error al obtener las ocupaciones");
             }
             return response.json();
@@ -352,6 +360,7 @@ function cargarOcupaciones() {
 }
 function obtenerListadoPersonas() {
     fetch(API_PERSONAS_ENDPOINT + "?idUsuario=" + localStorage.getItem("idUsuario"), {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -359,7 +368,10 @@ function obtenerListadoPersonas() {
         },
     })
         .then((response) => {
-            if (!response.ok) {
+          if(response.status === 401){
+                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+                CerrarSesion();
+            } else if (!response.ok) {
                 throw new Error("Error al obtener el listado de personas");
             }
             return response.json();
@@ -388,9 +400,15 @@ function eliminarPersona(idPersona) {
 
             } else if(response.status === 401){
                 alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                inicializar();
+                CerrarSesion();
+            } else if (response.status === 404) {
+                return response.json().then((data) => {
+                    document.querySelector("#errorMessageCensados").innerHTML = data.mensaje;
+                    return Promise.reject(data);
+                });
             }
             else {
+                document.querySelector("#errorMessageCensados").innerHTML = "Hubo un error al eliminar la persona";
                 throw new Error("Error al eliminar la persona");
             }
         })
@@ -420,7 +438,6 @@ function filtrarPersonasPorOcupacion() {
         obtenerListadoPersonas();
         return;
     }
-//Acá hubo que hacer algunos cambios (se usa la cache), revisar si funciona mal
     if (filtroOcupacionId === "") {
         // Si no hay selección en el filtro, mostramos la tabla completa
         cachePersonas.forEach((persona) => {
@@ -439,10 +456,7 @@ function filtrarPersonasPorOcupacion() {
                         <ion-col >
                         <ion-item><button onclick="eliminarPersona(${persona.id})" ><ion-icon name="person-remove" slot="start"></ion-icon>Eliminar</button></ion-item>
                         </ion-col>
-            </ion-row>
-            
-                
-            `
+            </ion-row>`
             ;
         });
     } else {
@@ -579,8 +593,10 @@ async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKi
                 "iduser": localStorage.getItem("idUsuario"),
             },
         });
-
-        if (!response.ok) {
+        if(response.status === 401){
+            alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+            CerrarSesion();
+        }else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de ciudades.");
         }
 
@@ -632,14 +648,17 @@ function degToRad(grados) {
 async function obtenerPersonasCensadas() {
     try {
         const response = await fetch(API_PERSONAS_ENDPOINT + "?idUsuario=" + localStorage.getItem("idUsuario"), {
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 "apikey": localStorage.getItem("token"),
                 "iduser": localStorage.getItem("idUsuario")
             }
         });
-
-        if (!response.ok) {
+        if(response.status === 401){
+            alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+            CerrarSesion();
+        } else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de personas censadas.");
         }
 
@@ -712,7 +731,7 @@ async function dibujarMapaConCiudadesCensadas() {
             color: 'blue',
             fillColor: 'blue',
             fillOpacity: 0.2,
-            radius: 150
+            radius: radioKilometros * 1000
         }).addTo(mapa);
 
         // Marcamos las ciudades con personas censadas dentro del radio en el mapa con un ícono diferente
@@ -824,7 +843,7 @@ function Inicio(showButtons) {
         //document.querySelector("#login").style.display = "none";
     }
     else {
-        
+
         //para cargar la pagina en ionic
         ruteo.push("/login")
         //document.querySelector("#login").style.display = "block";
@@ -902,7 +921,7 @@ function navegar(event){
     }
     else if (ruta == "/MapaCiudadesCensadas") {
         document.querySelector("#MapaCiudadesCensadas").style.display = "block";
-        //document.querySelector("#mapa").style.display = "block"    
+        //document.querySelector("#mapa").style.display = "block"
     }
     else{
         CerrarSesion();

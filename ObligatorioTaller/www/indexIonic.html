@@ -263,7 +263,8 @@
                         </ion-row>
                         <div id="tablaCensadosTotalesBody"></div>
                         <!--Aqui se carga dinamicamnte con los datos de los censados totales -->
-                    </div>
+                      <ion-title id="errorMessageCensados"></ion-title>
+                  </div>
                     <ion-button onclick="atras()" size="small">
                       <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
                     </ion-button>
@@ -286,7 +287,7 @@
                     <ion-label >Ingrese un radio en km</ion-label>
                     <ion-input id="radio" type="number" ></ion-input>
                     <ion-button id="btnDibujarMapa" size="small">
-                        <ion-label>Obtener la ubicacion</ion-label>
+                        <ion-label>Dibujar mapa</ion-label>
                     </ion-button>    
                     <ion-button onclick="atras()" size="small">
                         <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
@@ -295,7 +296,6 @@
                         #mapa{height:400px;}
                     </style>
                     <div id="mapa" >
-                        Soy el MAPA
                         <!--Aqui se carga dinamicamnte el mapa con las ciudades donde el censisita hizo al menos un censo-->
                     </div>
           </ion-content>
