@@ -284,19 +284,25 @@
             </ion-toolbar>
           </ion-header>
           <ion-content>
-                    <ion-input label="Radio:" id="radio" type="number" placeholder="Ingrese un radio en km"></ion-input>
-                    <ion-button id="btnDibujarMapa" size="small">
-                        <ion-label>Dibujar mapa</ion-label>
-                    </ion-button>    
-                    <ion-button onclick="atras()" size="small">
-                        <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
-                    </ion-button>
-                    <style>
-                        #mapa{height:400px;}
-                    </style>
-                    <div id="mapa" >
-                        <!--Aqui se carga dinamicamnte el mapa con las ciudades donde el censisita hizo al menos un censo-->
-                    </div>
+                    <ion-grid>
+                      <ion-row>
+                        <ion-column>
+                          <ion-input label="Radio:" id="radio" type="number" placeholder="Ingrese un radio en km"></ion-input>
+                          <ion-button id="btnDibujarMapa" size="small">
+                              <ion-label>Dibujar mapa</ion-label>
+                          </ion-button>
+                          <ion-button onclick="atras()" size="small">
+                              <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
+                          </ion-button>
+                          <style>
+                              #mapa{height:400px;}
+                          </style>
+                          <div id="mapa" >
+                              <!--Aqui se carga dinamicamnte el mapa con las ciudades donde el censisita hizo al menos un censo-->
+                          </div>
+                        </ion-column>
+                      </ion-row>
+                    </ion-grid>
           </ion-content>
       </ion-page>
 </div>
