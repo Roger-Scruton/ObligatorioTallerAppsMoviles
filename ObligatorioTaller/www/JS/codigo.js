@@ -17,6 +17,8 @@ let cacheOcupaciones = [];
 let cachePersonas = [];
 let mapa;
 let marcadoresCiudades = []; // Array para almacenar los marcadores de ciudades
+let circuloRadio;
+let alertShown = false;
 
 
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
@@ -30,23 +32,23 @@ function autoLogin(){
     if(localStorage.getItem("token") != null){
         //si existe token y el usuario esta logueado mostramos su interfaz sino inicializamos
     if(hayUsuarioLogueado === "true"){
-        Inicio(false);
+        inicio(false);
     }else{
     inicializar();
     }
     }else{
-        alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-        CerrarSesion();
+        cerrarSesion();
     }
 }
 function inicializar() {
-    Inicio(true);
-    AgregarEventos();
+    inicio(true);
+    agregarEventos();
 }
 
-function Registro() {
+function registro() {
     let nombreUsuario = document.querySelector("#usuario").value;
     let password = document.querySelector("#passRegistro").value;
+    let verificacionPassword = document.querySelector("#verificacionPassword").value;
     document.querySelector("#errorMessageRegistro").innerHTML = "";
     try {
         if (nombreUsuario.trim().length === 0) {
@@ -54,6 +56,10 @@ function Registro() {
         }
         if (password.trim().length === 0) {
             throw new Error("La password es requerida");
+        }
+
+        if(password !== verificacionPassword) {
+            throw new Error("Las contraseñas no coinciden");
         }
 
         // Hacer la llamada a la API para el registro
@@ -68,15 +74,15 @@ function Registro() {
             })
         })
             .then((response) => {
-                if (response.ok) {
-                    // si la respuesta es exitosa covertimos la misma a json
-                    return response.json();
-                } else if (response.status === 409) {
+                 if (response.status === 409) {
                     return response.json().then((data) => {
                         document.querySelector("#errorMessageRegistro").innerHTML = data.mensaje;
-                        LimpiarCampos();
+                        limpiarCampos();
                         return Promise.reject(data);
                     });
+                } else if (response.ok) {
+                    // si la respuesta es exitosa covertimos la misma a json
+                    return response.json();
                 } else {
                     return Promise.reject(response);
                 }
@@ -91,8 +97,9 @@ function Registro() {
                 localStorage.setItem("token", token);
                 localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
+                alertShown = false;
                 // Mostrar la sección de usuario logueado
-                Inicio(false);
+                inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
                 OcultarBotones(false);
             })
@@ -110,7 +117,7 @@ function Registro() {
     }
 }
 // Función para iniciar sesión
-function IniciarSesion() {
+function iniciarSesion() {
     let nombreUsuario = document.querySelector("#nombreUsuario").value;
     let password = document.querySelector("#password").value;
     document.querySelector("#errorMessage").innerHTML = "";
@@ -132,16 +139,19 @@ function IniciarSesion() {
             })
         })
             .then((response) => {
-                if (response.ok) {
-                    return response.json();
-                } else if (response.status === 409) {
+                if (response.status === 409) {
                     return response.json().then((data) => {
                         // Mostrar mensaje de usuario ya registrado
                         document.querySelector("#errorMessage").innerHTML = data.mensaje;
-                        LimpiarCampos();
+                        limpiarCampos();
                         return Promise.reject(data);
                     });
-                } else {
+                } else if (response.ok) {
+                    alertShown = false;
+                    return response.json();
+                }
+
+                else {
                     return Promise.reject(response);
                 }
             })
@@ -155,7 +165,7 @@ function IniciarSesion() {
                 localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
                 // Mostrar la sección de usuario logueado
-                Inicio(false);
+                inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
                 OcultarBotones(false);
             })
@@ -174,19 +184,19 @@ function IniciarSesion() {
 }
 
 // Función para cerrar sesión
-function CerrarSesion() {
+function cerrarSesion() {
     // Limpiar el token y el estado de sesión del localStorage
     localStorage.clear();
     //localStorage.setItem("token", "");
     //localStorage.setItem("hayUsuarioLogueado", "false");
     // Mostrar la sección de inicio de sesión
-    LimpiarCampos();
-    Inicio(true);
+    limpiarCampos();
+    inicio(true);
     // Limpiar los campos de usuario y contraseña
 
 }
 // Función para agregar una nueva persona
-function AgregarPersona() {
+function agregarPersona() {
     let nombrePersona = document.querySelector("#nombrePersona").value;
     let departamento = document.querySelector("#departamento").value;
     let ciudad = document.querySelector("#ciudad").value;
@@ -220,14 +230,13 @@ function AgregarPersona() {
             })
         })
             .then((response) => {
-                if (response.ok) {
+                if (response.status === 401) {
+                        return displayAlert();
+                } else if (response.ok) {
                     // Mostrar mensaje de registro exitoso
                     document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
                     obtenerListadoPersonas() //revisar si es necesario en ionic
-                    LimpiarCamposPersona();
-                } else if(response.status === 401){
-                    alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                    CerrarSesion();
+                    limpiarCamposPersona();
                 } else {
                     return Promise.reject(response);
                 }
@@ -255,8 +264,7 @@ function cargarDepartamentos() {
     })
         .then((response) => {
             if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                CerrarSesion();
+                return displayAlert();
             } else if (!response.ok) {
                 throw new Error("Error al obtener los departamentos");
             }
@@ -296,8 +304,7 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
     })
         .then(response => {
             if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                CerrarSesion();
+                return displayAlert();
             } else if (!response.ok) {
                 throw new Error("Error al obtener las ciudades");
             }
@@ -336,8 +343,7 @@ function cargarOcupaciones() {
     })
         .then((response) => {
             if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                CerrarSesion();
+                return displayAlert();
             }else if (!response.ok) {
                 throw new Error("Error al obtener las ocupaciones");
             }
@@ -369,9 +375,8 @@ function obtenerListadoPersonas() {
     })
         .then((response) => {
           if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                CerrarSesion();
-            } else if (!response.ok) {
+              return displayAlert();
+          } else if (!response.ok) {
                 throw new Error("Error al obtener el listado de personas");
             }
             return response.json();
@@ -399,8 +404,7 @@ function eliminarPersona(idPersona) {
                 return response.json(); // Convertimos la respuesta a JSON
 
             } else if(response.status === 401){
-                alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-                CerrarSesion();
+                return displayAlert();
             } else if (response.status === 404) {
                 return response.json().then((data) => {
                     document.querySelector("#errorMessageCensados").innerHTML = data.mensaje;
@@ -511,9 +515,6 @@ function cargarSelectOcupaciones() {
     });
 }
 
-
-//CORREGIR, existe un endpint en el API que ya te calcula el total. Luego solo hay que filtrar montevideo e interior.
-//Está bien así. Se revisó el endpoint totalCensados.php y solo devuelve el total de censados para TODA la API, no hay forma de discernir entre usuarios y menos por departamento o ciudad.
 function mostrarTotales() {
     // Obtenemos los datos del cache del Local Storage
     const cachePersonas = JSON.parse(localStorage.getItem("cachePersonas"));
@@ -594,8 +595,7 @@ async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKi
             },
         });
         if(response.status === 401){
-            alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-            CerrarSesion();
+            return displayAlert();
         }else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de ciudades.");
         }
@@ -656,8 +656,7 @@ async function obtenerPersonasCensadas() {
             }
         });
         if(response.status === 401){
-            alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-            CerrarSesion();
+            return displayAlert();
         } else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de personas censadas.");
         }
@@ -698,6 +697,17 @@ async function dibujarMapaConCiudadesCensadas() {
             }).addTo(mapa);
         }
 
+        // Borramos los marcadores de ciudades anteriores
+        marcadoresCiudades.forEach((marcador) => {
+            mapa.removeLayer(marcador);
+        });
+        marcadoresCiudades = [];
+
+        // Borramos el círculo de radio anterior, si existe
+        if (circuloRadio) {
+            mapa.removeLayer(circuloRadio);
+        }
+
         // Creamos un icono personalizado rojo para el marcador del censista
         const redIcon = L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
@@ -707,12 +717,6 @@ async function dibujarMapaConCiudadesCensadas() {
             tooltipAnchor: [16, -28],
             shadowSize: [41, 41]
         });
-
-        // Borramos los marcadores de ciudades anteriores
-        marcadoresCiudades.forEach((marcador) => {
-            mapa.removeLayer(marcador);
-        });
-        marcadoresCiudades = [];
 
         // Marcamos la ubicación del censista en el mapa usando el icono personalizado rojo
         L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
@@ -727,7 +731,7 @@ async function dibujarMapaConCiudadesCensadas() {
         const ciudadesConPersonas = filtrarCiudadesConPersonas(ciudades, personasCensadas);
 
         // Dibujamos un círculo celeste como marca de agua en el mapa con el radio especificado (7000 metros)
-        L.circle([latitudCensista, longitudCensista], {
+        circuloRadio = L.circle([latitudCensista, longitudCensista], {
             color: 'blue',
             fillColor: 'blue',
             fillOpacity: 0.2,
@@ -768,13 +772,13 @@ document.querySelector("#fechaNacimiento").addEventListener("change", (event) =>
         ocupacionSelect.disabled = false;
     }
 });
-function LimpiarCampos() {
+function limpiarCampos() {
         document.querySelector("#nombreUsuario").value = "";
         document.querySelector("#password").value = "";
     }
 
 // Función para limpiar los campos de ingreso de persona
-function LimpiarCamposPersona() {
+function limpiarCamposPersona() {
     document.querySelector("#nombrePersona").value = "";
     document.querySelector("#departamento").value = "";
     document.querySelector("#ciudad").value = "";
@@ -800,18 +804,18 @@ function OcultarBotones(showButtons) {
     }
 }
 
-function AgregarEventos() {
+function agregarEventos() {
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange", navegar);
-    //document.querySelector("#btnInicio").addEventListener("click", MostrarOcultarDivs);
-    document.querySelector("#btnIngreso").addEventListener("click", MostrarOcultarDivs);
-    document.querySelector("#btnRegistro").addEventListener("click", MostrarOcultarDivs);
+    //document.querySelector("#btnInicio").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnIngreso").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnRegistro").addEventListener("click", mostrarOcultarDivs);
     //se agrega el siguiente evento ya que sustituye a MostrarAgregarPersona() y queda unificado el codigo un solo lugar
-    document.querySelector("#btnAgregarPersona").addEventListener("click", MostrarOcultarDivs);
-    document.querySelector("#btnListadoPersonas").addEventListener("click", MostrarOcultarDivs);
-    document.querySelector("#btnCerrarSesion").addEventListener("click", CerrarSesion);
-    document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
-    document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
-    document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
+    document.querySelector("#btnAgregarPersona").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnListadoPersonas").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnCerrarSesion").addEventListener("click", cerrarSesion);
+    document.querySelector("#btnLogin").addEventListener("click", iniciarSesion);
+    document.querySelector("#btnRegistroUsuario").addEventListener("click", registro);
+    document.querySelector("#btnEnviarDatosPersona").addEventListener("click", agregarPersona);
     // Evento para obtener la ubicación del censista cuando se hace clic en el botón
     document.getElementById("btnMapa").addEventListener("click",obtenerUbicacion );
     document.getElementById("btnDibujarMapa").addEventListener("click", dibujarMapaConCiudadesCensadas);
@@ -831,10 +835,10 @@ function AgregarEventos() {
         mostrarTotales();
     });
 }
-function Inicio(showButtons) {
+function inicio(showButtons) {
     OcultarDivs();
     OcultarBotones(showButtons);
-    AgregarEventos();
+    agregarEventos();
     //document.querySelector("#login").style.display = "block";
     if (localStorage.getItem("token") != null) {
         ruteo.push("/")
@@ -851,7 +855,7 @@ function Inicio(showButtons) {
     }
 }
 
-function MostrarOcultarDivs() {
+function mostrarOcultarDivs() {
     OcultarDivs();
     switch (this.id) {
         case "btnInicio": document.querySelector("#inicio").style.display = "block";
@@ -892,7 +896,7 @@ function atras(){
 }
 
 function navegar(event){
-    OcultarPaginas()
+    ocultarPaginas()
     let ruta = event.detail.to;
     if (ruta == "/") {
         document.querySelector("#pageLogin").style.display = "block";
@@ -924,18 +928,26 @@ function navegar(event){
         //document.querySelector("#mapa").style.display = "block"
     }
     else{
-        CerrarSesion();
+        cerrarSesion();
     }
 }
 
-function OcultarPaginas() {
+function ocultarPaginas() {
     let pages = document.getElementsByClassName("ion-page");
     for (let i = 0; i < pages.length; i++) {
 
         if (pages[i].id != null && pages[i].id !== "") {
             document.querySelector("#" + pages[i].id).style.display = "none";
         }
-
-
+    }
+}
+function displayAlert(){
+    if (alertShown === false) {
+        alertShown = true;
+        alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+        cerrarSesion();
+    }else {
+        alertShown = true;
+        cerrarSesion();
     }
 }
