@@ -758,7 +758,7 @@ async function dibujarMapaConCiudadesCensadas() {
         document.getElementById('mapa').style.display = 'block';
     } catch (error) {
         console.error("Error al dibujar el mapa:", error);
-        alert("No se pudo dibujar el mapa.");
+        throw Error("No se pudo dibujar el mapa.")
     }
 }
 
