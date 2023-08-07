@@ -99,6 +99,7 @@ function registro() {
                 localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
                 alertShown = false;
+                obtenerListadoPersonas();
                 // Mostrar la sección de usuario logueado
                 inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
@@ -165,6 +166,7 @@ function iniciarSesion() {
                 localStorage.setItem("token", token);
                 localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
+                obtenerListadoPersonas();
                 // Mostrar la sección de usuario logueado
                 inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
@@ -420,7 +422,8 @@ function eliminarPersona(idPersona) {
         //revisar este segundo then
         .then((data) => {
             // Verificamos si la respuesta contiene el mensaje de éxito
-            if (data.mensaje) {obtenerListadoPersonas(); // Actualizamos la lista de personas
+            if (data.mensaje) {
+                obtenerListadoPersonas(); // Actualizamos la lista de personas
             } else {
                 document.querySelector("#errorMessagePersona").innerHTML = data.mensaje;
                 throw new Error("Error al eliminar la persona");
