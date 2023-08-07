@@ -582,10 +582,10 @@ async function obtenerUbicacion() {
 
         } catch (error) {
             console.error("Error al obtener la ubicación:", error);
-            alert("No se pudo obtener la ubicación del censista.");
+            throw Error("No se pudo obtener ubicación del censista");
         }
     } else {
-        alert("Geolocation no es soportado por este navegador.");
+        throw Error("Geolocation no es soportado por este navegador.");
     }
 }
 async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKilometros) {
