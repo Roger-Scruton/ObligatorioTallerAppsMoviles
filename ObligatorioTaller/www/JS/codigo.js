@@ -936,8 +936,8 @@ function ocultarPaginas() {
 function displayAlert(){
     if (alertShown === false) {
         alertShown = true;
-        alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
         cerrarSesion();
+        throw new Error("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
     }else {
         alertShown = true;
         cerrarSesion();
