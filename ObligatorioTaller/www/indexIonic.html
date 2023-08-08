@@ -66,7 +66,6 @@
         </ion-header>
         <ion-content>
             <!--Usuario sin loguearse-->
-            <!--<div id="divInicioUsuarioDesconocido">Inicie sesion</div>-->
             <!--Usuario logueado-->
             <div id="divInicioUsuarioLogueado">
             <ion-grid>
@@ -191,8 +190,7 @@
                 <div id="listado">
                   <ion-select id="selectOcupacion" aria-label="Ocupacion" interface="popover" placeholder="Filtrar por ocupación:">
                     <!-- Aquí se llenará dinámicamente el listado de ocupaciones obtenido desde la API -->
-                  </ion-select>
-                  
+                  </ion-select>  <ion-button onclick="atras()" size="small"><ion-icon name='arrow-undo' slot='icon-only'></ion-icon></ion-button>
                     <!-- Encabezado de la tabla -->
                     <ion-row style="border-bottom: groove;">
                         <ion-col col-4>
@@ -210,21 +208,7 @@
                       </ion-row>
                       <div id="tablaInicioBody"></div>
                       <!--Aqui se carga dinamicamnte-->
-                      <!--<ion-row style="border-bottom: groove;" >
-                        <ion-col col-4>
-                          <ion-label >row</ion-label>
-                        </ion-col>
-                        <ion-col col-4>
-                          <ion-label >02/02/2018</ion-label>
-                        </ion-col>
-                        <ion-col col-4>
-                          <ion-label >row</ion-label>
-                        </ion-col>
-                    </ion-row>-->
                   </div>
-                  <ion-button onclick="atras()" size="small">
-                    <ion-icon name='arrow-undo' slot='icon-only'></ion-icon>
-                  </ion-button>
                 </div>
               </ion-col>
             </ion-row>
@@ -292,6 +276,8 @@
                           </ion-button>
                           <style>
                               #mapa{height:400px;}
+                              #mapa{width:600px;}
+
                           </style>
                           <div id="mapa" >
                               <!--Aqui se carga dinamicamnte el mapa con las ciudades donde el censisita hizo al menos un censo-->

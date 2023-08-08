@@ -190,13 +190,10 @@ function iniciarSesion() {
 function cerrarSesion() {
     // Limpiar el token y el estado de sesión del localStorage
     localStorage.clear();
-    //localStorage.setItem("token", "");
-    //localStorage.setItem("hayUsuarioLogueado", "false");
-    // Mostrar la sección de inicio de sesión
-    limpiarCampos();
-    inicio(true);
     // Limpiar los campos de usuario y contraseña
-
+    limpiarCampos();
+    // Mostrar la sección de inicio de sesión
+    inicio(true);
 }
 // Función para agregar una nueva persona
 function agregarPersona() {
@@ -290,11 +287,6 @@ function cargarDepartamentos() {
         })
         .catch(handleApiError);
 }
-//A REVISAR
-// Llamar a la función cargarDepartamentos al cargar la página "agregarPersona"
-document.addEventListener("ionViewWillEnter", () => {
-    cargarDepartamentos();
-});
 
 function cargarCiudadesPorDepartamento(idDepartamento) {
     fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
@@ -419,7 +411,6 @@ function eliminarPersona(idPersona) {
                 throw new Error("Error al eliminar la persona");
             }
         })
-        //revisar este segundo then
         .then((data) => {
             // Verificamos si la respuesta contiene el mensaje de éxito
             if (data.mensaje) {
@@ -432,8 +423,7 @@ function eliminarPersona(idPersona) {
         .catch(handleApiError); // Utilizar la función para manejar errores de la API
 }
 function filtrarPersonasPorOcupacion() {
-    const ocupacionSelect = document.querySelector("#selectOcupacion");
-    const filtroOcupacionId = ocupacionSelect.value;
+    let filtroOcupacionId = document.querySelector("#selectOcupacion").value;
 
     const tablaInicioBody = document.querySelector("#tablaInicioBody");
     tablaInicioBody.innerHTML = ""; // Limpiamos la tabla antes de agregar los datos
@@ -494,11 +484,6 @@ function filtrarPersonasPorOcupacion() {
             ;
         });
     }
-
-    // Asignamos el evento de cambio al select de ocupaciones para actualizar la tabla al cambiar la selección
-    ocupacionSelect.addEventListener("ionChange", () => {
-        filtrarPersonasPorOcupacion();
-    });
 }
 
 function cargarSelectOcupaciones() {
@@ -815,10 +800,8 @@ function OcultarBotones(showButtons) {
 
 function agregarEventos() {
     document.querySelector("#ruteo").addEventListener("ionRouteWillChange", navegar);
-    //document.querySelector("#btnInicio").addEventListener("click", mostrarOcultarDivs);
     document.querySelector("#btnIngreso").addEventListener("click", mostrarOcultarDivs);
     document.querySelector("#btnRegistro").addEventListener("click", mostrarOcultarDivs);
-    //se agrega el siguiente evento ya que sustituye a MostrarAgregarPersona() y queda unificado el codigo un solo lugar
     document.querySelector("#btnAgregarPersona").addEventListener("click", mostrarOcultarDivs);
     document.querySelector("#btnListadoPersonas").addEventListener("click", mostrarOcultarDivs);
     document.querySelector("#btnCerrarSesion").addEventListener("click", cerrarSesion);
@@ -834,7 +817,6 @@ function agregarEventos() {
         obtenerListadoPersonas();
     });
     document.querySelector("#btnAgregarPersona").addEventListener("click", () => {
-        //MostrarAgregarPersona();
         // Cargamos departamentos y ocupaciones al hacer clic en el botón "Agregar Persona"
         cargarDepartamentos();
         cargarOcupaciones();
@@ -843,23 +825,27 @@ function agregarEventos() {
     document.querySelector("#btnCensadosTotales").addEventListener("click", () => {
         mostrarTotales();
     });
+
+    // Asignamos el evento de cambio al select de ocupaciones para actualizar la tabla al cambiar la selección
+    document.querySelector("#selectOcupacion").addEventListener("ionChange", () => {
+        filtrarPersonasPorOcupacion();
+    });
+    document.addEventListener("ionViewWillEnter", () => {
+        cargarDepartamentos();
+    });
 }
 function inicio(showButtons) {
     OcultarDivs();
     OcultarBotones(showButtons);
     agregarEventos();
-    //document.querySelector("#login").style.display = "block";
     if (localStorage.getItem("token") != null) {
         ruteo.push("/")
-        //document.querySelector("#login").style.display = "none";
         document.querySelector("#divInicioUsuarioLogueado").style.display = "block";
-        //document.querySelector("#login").style.display = "none";
     }
     else {
 
         //para cargar la pagina en ionic
         ruteo.push("/login")
-        //document.querySelector("#login").style.display = "block";
         document.querySelector("#divInicioUsuarioLogueado").style.display = "none";
     }
 }
@@ -912,11 +898,9 @@ function navegar(event){
     }
     else if (ruta == "/login") {
         document.querySelector("#login").style.display="block";
-        //document.querySelector("#pageRegistro").style.display = "block";
     }
     else if (ruta == "/pageRegistro") {
         document.querySelector("#registro").style.display="block";
-        //document.querySelector("#pageRegistro").style.display = "block";
     }
     else if (ruta == "/agregarPersona") {
         document.querySelector("#agregarPersona").style.display = "block";
@@ -934,7 +918,6 @@ function navegar(event){
     }
     else if (ruta == "/MapaCiudadesCensadas") {
         document.querySelector("#MapaCiudadesCensadas").style.display = "block";
-        //document.querySelector("#mapa").style.display = "block"
     }
     else{
         cerrarSesion();
