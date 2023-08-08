@@ -322,9 +322,8 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
 // Función para cargar las ocupaciones en el select
 function cargarOcupaciones() {
     // Intentamos recuperar cacheOcupaciones del Local Storage
-    const cachedData = localStorage.getItem("cacheOcupaciones");
-    if (cachedData) {
-        cacheOcupaciones = JSON.parse(cachedData);
+    if (localStorage.getItem("cacheOcupaciones") != null) {
+        cacheOcupaciones = JSON.parse(localStorage.getItem("cacheOcupaciones"));
         cargarSelectOcupaciones();
         //ver de cortar el flujo por acá //REVISAR
     }
@@ -933,13 +932,14 @@ function ocultarPaginas() {
         }
     }
 }
-function displayAlert(){
+function displayAlert() {
     if (alertShown === false) {
         alertShown = true;
         cerrarSesion();
-        throw new Error("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
-    }else {
+        alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+    } else {
         alertShown = true;
         cerrarSesion();
     }
 }
+
