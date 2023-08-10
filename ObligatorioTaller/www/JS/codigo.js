@@ -1,3 +1,6 @@
+// constantes de ruteo para la navegacion
+const ruteo = document.querySelector("#ruteo");
+const menu = document.querySelector("#menu");
 // Constantes para las URL de la API
 const API_BASE_URL = "https://censo.develotion.com/";
 const API_LOGIN_ENDPOINT = API_BASE_URL + "login.php";
@@ -12,6 +15,12 @@ let token;
 let idUsuario;
 let cacheOcupaciones = [];
 let cachePersonas = [];
+let mapa;
+let marcadoresCiudades = []; // Array para almacenar los marcadores de ciudades
+let circuloRadio;
+let alertShown = false;
+let marcadorCensista;
+
 
 if(localStorage.getItem("hayUsuarioLogueado") === null) {
 localStorage.setItem("hayUsuarioLogueado", "false")
@@ -23,23 +32,24 @@ function autoLogin(){
     //validamos que el token no sea nulo
     if(localStorage.getItem("token") != null){
         //si existe token y el usuario esta logueado mostramos su interfaz sino inicializamos
-    if(localStorage.getItem("token") != "" && hayUsuarioLogueado === "true" ){
-        Inicio(false);
+    if(hayUsuarioLogueado === "true"){
+        inicio(false);
     }else{
     inicializar();
     }
     }else{
-        alert("El tiempo de sesión ha expirado. Debe volver a iniciar sesion");
-        inicializar();
+        cerrarSesion();
     }
 }
 function inicializar() {
-    Inicio(true);
+    inicio(true);
+    agregarEventos();
 }
 
-function Registro() {
+function registro() {
     let nombreUsuario = document.querySelector("#usuario").value;
     let password = document.querySelector("#passRegistro").value;
+    let verificacionPassword = document.querySelector("#verificacionPassword").value;
     document.querySelector("#errorMessageRegistro").innerHTML = "";
     try {
         if (nombreUsuario.trim().length === 0) {
@@ -47,6 +57,10 @@ function Registro() {
         }
         if (password.trim().length === 0) {
             throw new Error("La password es requerida");
+        }
+
+        if(password !== verificacionPassword) {
+            throw new Error("Las contraseñas no coinciden");
         }
 
         // Hacer la llamada a la API para el registro
@@ -61,15 +75,15 @@ function Registro() {
             })
         })
             .then((response) => {
-                if (response.ok) {
-                    // si la respuesta es exitosa covertimos la misma a json
-                    return response.json();
-                } else if (response.status === 409) {
+                 if (response.status === 409) {
                     return response.json().then((data) => {
                         document.querySelector("#errorMessageRegistro").innerHTML = data.mensaje;
-                        LimpiarCampos();
+                        limpiarCampos();
                         return Promise.reject(data);
                     });
+                } else if (response.ok) {
+                    // si la respuesta es exitosa covertimos la misma a json
+                    return response.json();
                 } else {
                     return Promise.reject(response);
                 }
@@ -84,8 +98,10 @@ function Registro() {
                 localStorage.setItem("token", token);
                 localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
+                alertShown = false;
+                obtenerListadoPersonas();
                 // Mostrar la sección de usuario logueado
-                Inicio(false);
+                inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
                 OcultarBotones(false);
             })
@@ -103,7 +119,7 @@ function Registro() {
     }
 }
 // Función para iniciar sesión
-function IniciarSesion() {
+function iniciarSesion() {
     let nombreUsuario = document.querySelector("#nombreUsuario").value;
     let password = document.querySelector("#password").value;
     document.querySelector("#errorMessage").innerHTML = "";
@@ -125,16 +141,19 @@ function IniciarSesion() {
             })
         })
             .then((response) => {
-                if (response.ok) {
-                    return response.json();
-                } else if (response.status === 409) {
+                if (response.status === 409) {
                     return response.json().then((data) => {
                         // Mostrar mensaje de usuario ya registrado
                         document.querySelector("#errorMessage").innerHTML = data.mensaje;
-                        LimpiarCampos();
+                        limpiarCampos();
                         return Promise.reject(data);
                     });
-                } else {
+                } else if (response.ok) {
+                    alertShown = false;
+                    return response.json();
+                }
+
+                else {
                     return Promise.reject(response);
                 }
             })
@@ -147,8 +166,9 @@ function IniciarSesion() {
                 localStorage.setItem("token", token);
                 localStorage.setItem("idUsuario", idUsuario);
                 localStorage.setItem("hayUsuarioLogueado", "true");
+                obtenerListadoPersonas();
                 // Mostrar la sección de usuario logueado
-                Inicio(false);
+                inicio(false);
                 // Ocultar los botones de inicio de sesión y registro
                 OcultarBotones(false);
             })
@@ -167,17 +187,16 @@ function IniciarSesion() {
 }
 
 // Función para cerrar sesión
-function CerrarSesion() {
+function cerrarSesion() {
     // Limpiar el token y el estado de sesión del localStorage
-    localStorage.setItem("token", "");
-    localStorage.setItem("hayUsuarioLogueado", "false");
-    // Mostrar la sección de inicio de sesión
-    Inicio(true);
+    localStorage.clear();
     // Limpiar los campos de usuario y contraseña
-    LimpiarCampos();
+    limpiarCampos();
+    // Mostrar la sección de inicio de sesión
+    inicio(true);
 }
 // Función para agregar una nueva persona
-function AgregarPersona() {
+function agregarPersona() {
     let nombrePersona = document.querySelector("#nombrePersona").value;
     let departamento = document.querySelector("#departamento").value;
     let ciudad = document.querySelector("#ciudad").value;
@@ -200,7 +219,6 @@ function AgregarPersona() {
                 "Content-type": "application/json",
                 "apikey": localStorage.getItem("token"),
                 "iduser": localStorage.getItem("idUsuario"),
-
             },
             body: JSON.stringify({
                 "idUsuario": localStorage.getItem("idUsuario"),
@@ -212,11 +230,13 @@ function AgregarPersona() {
             })
         })
             .then((response) => {
-                if (response.ok) {
+                if (response.status === 401) {
+                        return displayAlert();
+                } else if (response.ok) {
                     // Mostrar mensaje de registro exitoso
                     document.querySelector("#errorMessagePersona").innerHTML = "Persona agregada exitosamente";
-                    obtenerListadoPersonas()
-                    LimpiarCamposPersona();
+                    obtenerListadoPersonas() //revisar si es necesario en ionic
+                    limpiarCamposPersona();
                 } else {
                     return Promise.reject(response);
                 }
@@ -235,6 +255,7 @@ function AgregarPersona() {
 // Función para cargar los departamentos en el select
 function cargarDepartamentos() {
     fetch(API_DEPARTAMENTOS_ENDPOINT, {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -242,7 +263,9 @@ function cargarDepartamentos() {
         },
     })
         .then((response) => {
-            if (!response.ok) {
+            if(response.status === 401){
+                return displayAlert();
+            } else if (!response.ok) {
                 throw new Error("Error al obtener los departamentos");
             }
             return response.json();
@@ -251,21 +274,23 @@ function cargarDepartamentos() {
             const departamentos = data.departamentos;
             const departamentoSelect = document.querySelector("#departamento");
             departamentoSelect.innerHTML =
-                "<option value='' selected disabled>Seleccione un departamento</option>";
+            "<ion-select-option value='' selected disabled>Seleccione un departamento</ion-slect-option>";
             departamentos.forEach((departamento) => {
-                departamentoSelect.innerHTML += `<option value="${departamento.id}">${departamento.nombre}</option>`;
+                departamentoSelect.innerHTML += `<ion-select-option value="${departamento.id}">${departamento.nombre}</ion-select-option>`;
             });
 
             // Asociar evento de cambio al select de departamentos
-            departamentoSelect.addEventListener("change", () => {
-                const selectedDepartamento = departamentoSelect.value;
+            departamentoSelect.addEventListener("ionChange", (event) => {
+                const selectedDepartamento = event.detail.value;
                 cargarCiudadesPorDepartamento(selectedDepartamento);
             });
         })
         .catch(handleApiError);
 }
+
 function cargarCiudadesPorDepartamento(idDepartamento) {
     fetch(API_CIUDADES_ENDPOINT + "?idDepartamento=" + idDepartamento, {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -273,7 +298,9 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
         }
     })
         .then(response => {
-            if (!response.ok) {
+            if(response.status === 401){
+                return displayAlert();
+            } else if (!response.ok) {
                 throw new Error("Error al obtener las ciudades");
             }
             return response.json();
@@ -281,9 +308,9 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
         .then(data => {
             const ciudades = data.ciudades;
             const ciudadSelect = document.querySelector("#ciudad");
-            ciudadSelect.innerHTML = "<option value='' selected disabled>Seleccione una ciudad</option>";
+            ciudadSelect.innerHTML = "<ion-select-option value='' selected disabled>Seleccione una ciudad</ion-select-option>";
             ciudades.forEach(ciudad => {
-                ciudadSelect.innerHTML += `<option value="${ciudad.id}">${ciudad.nombre}</option>`;
+                ciudadSelect.innerHTML += `<ion-select-option value="${ciudad.id}">${ciudad.nombre}</ion-select-option>`;
             });
         })
         .catch(error => {
@@ -295,13 +322,13 @@ function cargarCiudadesPorDepartamento(idDepartamento) {
 // Función para cargar las ocupaciones en el select
 function cargarOcupaciones() {
     // Intentamos recuperar cacheOcupaciones del Local Storage
-    const cachedData = localStorage.getItem("cacheOcupaciones");
-    if (cachedData) {
-        cacheOcupaciones = JSON.parse(cachedData);
+    if (localStorage.getItem("cacheOcupaciones") != null) {
+        cacheOcupaciones = JSON.parse(localStorage.getItem("cacheOcupaciones"));
         cargarSelectOcupaciones();
+        //ver de cortar el flujo por acá //REVISAR
     }
-
     fetch(API_OCUPACIONES_ENDPOINT, {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -309,7 +336,9 @@ function cargarOcupaciones() {
         },
     })
         .then((response) => {
-            if (!response.ok) {
+            if(response.status === 401){
+                return displayAlert();
+            }else if (!response.ok) {
                 throw new Error("Error al obtener las ocupaciones");
             }
             return response.json();
@@ -322,15 +351,16 @@ function cargarOcupaciones() {
             cargarSelectOcupaciones();
             const ocupacionSelect = document.querySelector("#ocupacion");
             ocupacionSelect.innerHTML =
-                "<option value='' selected disabled>Seleccione una ocupación</option>";
+                "<ion-select-option value='' selected disabled>Seleccione una ocupación</ion-select-option>";
             data.ocupaciones.forEach((ocupacion) => {
-                ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
+                ocupacionSelect.innerHTML += `<ion-select-option value="${ocupacion.id}">${ocupacion.ocupacion}</ion-select-option>`;
             });
         })
         .catch(handleApiError);
 }
 function obtenerListadoPersonas() {
     fetch(API_PERSONAS_ENDPOINT + "?idUsuario=" + localStorage.getItem("idUsuario"), {
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
             "apikey": localStorage.getItem("token"),
@@ -338,7 +368,9 @@ function obtenerListadoPersonas() {
         },
     })
         .then((response) => {
-            if (!response.ok) {
+          if(response.status === 401){
+              return displayAlert();
+          } else if (!response.ok) {
                 throw new Error("Error al obtener el listado de personas");
             }
             return response.json();
@@ -364,24 +396,33 @@ function eliminarPersona(idPersona) {
         .then((response) => {
             if (response.ok) {
                 return response.json(); // Convertimos la respuesta a JSON
-            } else {
+
+            } else if(response.status === 401){
+                return displayAlert();
+            } else if (response.status === 404) {
+                return response.json().then((data) => {
+                    document.querySelector("#errorMessageCensados").innerHTML = data.mensaje;
+                    return Promise.reject(data);
+                });
+            }
+            else {
+                document.querySelector("#errorMessageCensados").innerHTML = "Hubo un error al eliminar la persona";
                 throw new Error("Error al eliminar la persona");
             }
         })
         .then((data) => {
             // Verificamos si la respuesta contiene el mensaje de éxito
             if (data.mensaje) {
-                console.log(data.mensaje); // Mostramos el mensaje en la consola (opcional)
                 obtenerListadoPersonas(); // Actualizamos la lista de personas
             } else {
+                document.querySelector("#errorMessagePersona").innerHTML = data.mensaje;
                 throw new Error("Error al eliminar la persona");
             }
         })
         .catch(handleApiError); // Utilizar la función para manejar errores de la API
 }
 function filtrarPersonasPorOcupacion() {
-    const ocupacionSelect = document.querySelector("#selectOcupacion");
-    const filtroOcupacionId = ocupacionSelect.value;
+    let filtroOcupacionId = document.querySelector("#selectOcupacion").value;
 
     const tablaInicioBody = document.querySelector("#tablaInicioBody");
     tablaInicioBody.innerHTML = ""; // Limpiamos la tabla antes de agregar los datos
@@ -394,18 +435,26 @@ function filtrarPersonasPorOcupacion() {
         obtenerListadoPersonas();
         return;
     }
-
     if (filtroOcupacionId === "") {
-        // Si no hay selección en el filtro, mostramos la tabla completa desde el cache
+        // Si no hay selección en el filtro, mostramos la tabla completa
         cachePersonas.forEach((persona) => {
-            tablaInicioBody.innerHTML += `
-                <tr>
-                    <td>${persona.nombre}</td>
-                    <td>${persona.fechaNacimiento}</td>
-                    <td>${persona.ocupacion}</td>
-                    <td><button onclick="eliminarPersona(${persona.id})">Eliminar</button></td>
-                </tr>
-            `;
+            tablaInicioBody.innerHTML +=
+            `
+            <ion-row style="border-bottom: groove;">
+                        <ion-col >
+                          <ion-label >${persona.nombre}</ion-label>
+                        </ion-col>
+                        <ion-col >
+                          <ion-label >${persona.fechaNacimiento}</ion-label>
+                        </ion-col>
+                        <ion-col >
+                          <ion-label >${persona.ocupacion}</ion-label>
+                        </ion-col>
+                        <ion-col >
+                        <ion-item><button onclick="eliminarPersona(${persona.id})" ><ion-icon name="person-remove" slot="start"></ion-icon>Eliminar</button></ion-item>
+                        </ion-col>
+            </ion-row>`
+            ;
         });
     } else {
         // Si hay selección en el filtro, mostramos solo las personas con la ocupación seleccionada desde el cache
@@ -413,26 +462,32 @@ function filtrarPersonasPorOcupacion() {
             (persona) => persona.ocupacion === parseInt(filtroOcupacionId)
         );
         personasFiltradas.forEach((persona) => {
-            tablaInicioBody.innerHTML += `
-                <tr>
-                    <td>${persona.nombre}</td>
-                    <td>${persona.fechaNacimiento}</td>
-                    <td>${persona.ocupacion}</td>
-                    <td><button onclick="eliminarPersona(${persona.id})">Eliminar</button></td>
-                </tr>
-            `;
+            tablaInicioBody.innerHTML +=
+            `
+            <ion-row style="border-bottom: groove;">
+                        <ion-col>
+                          <ion-label >${persona.nombre}</ion-label>
+                        </ion-col>
+                        <ion-col>
+                          <ion-label >${persona.fechaNacimiento}</ion-label>
+                        </ion-col>
+                        <ion-col>
+                          <ion-label >${persona.ocupacion}</ion-label>
+                        </ion-col>
+                        <ion-col>
+                        <ion-item><button onclick="eliminarPersona(${persona.id})" ><ion-icon name="person-remove" slot="start"></ion-icon>Eliminar</button></ion-item>
+                        </ion-col>
+            </ion-row>
+            
+            `
+            ;
         });
     }
-
-    // Asignamos el evento de cambio al select de ocupaciones para actualizar la tabla al cambiar la selección
-    ocupacionSelect.addEventListener("change", () => {
-        filtrarPersonasPorOcupacion();
-    });
 }
 
 function cargarSelectOcupaciones() {
     const ocupacionSelect = document.querySelector("#selectOcupacion");
-    ocupacionSelect.innerHTML = "<option value=''>Todas las ocupaciones</option>";
+    ocupacionSelect.innerHTML = "<ion-select-option value=''>Todas las ocupaciones</ion-select-option>";
 
     // Recuperamos los datos del Local Storage y verificamos si hay ocupaciones guardadas
     const cachedData = localStorage.getItem("cacheOcupaciones");
@@ -440,18 +495,14 @@ function cargarSelectOcupaciones() {
 
     // Agregamos las opciones de ocupaciones al select
     cacheOcupaciones.ocupaciones.forEach((ocupacion) => {
-        ocupacionSelect.innerHTML += `<option value="${ocupacion.id}">${ocupacion.ocupacion}</option>`;
+        ocupacionSelect.innerHTML += `<ion-select-option value="${ocupacion.id}">${ocupacion.ocupacion}</ion-select-option>`;
     });
 
-    // Asignamos el evento para filtrar al cambiar la ocupación seleccionada
-    ocupacionSelect.addEventListener("change", function () {
-        // Aquí puedes agregar la lógica para filtrar según la ocupación seleccionada
+    // Asignar el evento para filtrar al cambiar la ocupación seleccionada
+    ocupacionSelect.addEventListener("ionChange", function () {
     });
 }
 
-
-//CORREGIR, existe un endpint en el API que ya te calcula el total. Luego solo hay que filtrar montevideo e interior.
-//Está bien así. Se revisó el endpoint totalCensados.php y solo devuelve el total de censados para TODA la API, no hay forma de discernir entre usuarios y menos por departamento o ciudad.
 function mostrarTotales() {
     // Obtenemos los datos del cache del Local Storage
     const cachePersonas = JSON.parse(localStorage.getItem("cachePersonas"));
@@ -459,7 +510,7 @@ function mostrarTotales() {
     if (!cachePersonas) {
         // Si no hay datos en el cache, volvemos a cargar desde la API
         obtenerListadoPersonas();
-        return;
+        return; //revisar return
     }
 
     const totalGeneral = cachePersonas.length;
@@ -477,12 +528,20 @@ function mostrarTotales() {
 
     // Mostrar los totales en la tabla
     const tablaCensadosTotalesBody = document.querySelector("#tablaCensadosTotalesBody");
-    tablaCensadosTotalesBody.innerHTML = `
-        <tr>
-            <td>${totalGeneral}</td>
-            <td>${totalMontevideo}</td>
-            <td>${totalRestoPais}</td>
-        </tr>
+    tablaCensadosTotalesBody.innerHTML = 
+    
+    `
+    <ion-row style="border-bottom: groove;">
+                <ion-col>
+                  <ion-label >${totalGeneral}</ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label >${totalMontevideo}</ion-label>
+                </ion-col>
+                <ion-col>
+                  <ion-label >${totalRestoPais}</ion-label>
+                </ion-col>
+    </ion-row>
     `;
 
     // Mostrar el div de censados totales
@@ -490,9 +549,6 @@ function mostrarTotales() {
     divCensadosTotales.style.display = "block";
 }
 
-
-// Evento para obtener la ubicación del censista cuando se hace clic en el botón
-document.getElementById("btnObtenerUbicacion").addEventListener("click", obtenerUbicacion);
 
 async function obtenerUbicacion() {
     if (navigator.geolocation) {
@@ -504,16 +560,16 @@ async function obtenerUbicacion() {
 
             // Obtenemos las coordenadas de latitud y longitud
             const latitudCensista = posicion.coords.latitude;
+            localStorage.setItem("latitudCensista",latitudCensista);
             const longitudCensista = posicion.coords.longitude;
+            localStorage.setItem("longitudCensista",longitudCensista);
 
-            // Llamamos a la función para dibujar el mapa con LeafletJS y señalar las ciudades dentro del radio
-            await dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista);
         } catch (error) {
             console.error("Error al obtener la ubicación:", error);
-            alert("No se pudo obtener la ubicación del censista.");
+            throw Error("No se pudo obtener ubicación del censista");
         }
     } else {
-        alert("Geolocation no es soportado por este navegador.");
+        throw Error("Geolocation no es soportado por este navegador.");
     }
 }
 async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKilometros) {
@@ -526,8 +582,9 @@ async function obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKi
                 "iduser": localStorage.getItem("idUsuario"),
             },
         });
-
-        if (!response.ok) {
+        if(response.status === 401){
+            return displayAlert();
+        }else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de ciudades.");
         }
 
@@ -579,14 +636,16 @@ function degToRad(grados) {
 async function obtenerPersonasCensadas() {
     try {
         const response = await fetch(API_PERSONAS_ENDPOINT + "?idUsuario=" + localStorage.getItem("idUsuario"), {
+            method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 "apikey": localStorage.getItem("token"),
                 "iduser": localStorage.getItem("idUsuario")
             }
         });
-
-        if (!response.ok) {
+        if(response.status === 401){
+            return displayAlert();
+        } else if (!response.ok) {
             throw new Error("No se pudo obtener el listado de personas censadas.");
         }
 
@@ -606,16 +665,36 @@ function filtrarCiudadesConPersonas(ciudades, personasCensadas) {
 
     return ciudadesConPersonas;
 }
-
-async function dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista) {
+async function dibujarMapaConCiudadesCensadas() {
     try {
-        // Creamos un mapa centrado en la ubicación del censista
-        const mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
+        let radioKilometros = document.querySelector("#radio").value;
+        let latitudCensista = localStorage.getItem("latitudCensista");
+        let longitudCensista = localStorage.getItem("longitudCensista");
 
-        // Agregamos una capa de mapa base (usamos OpenStreetMap en este caso)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(mapa);
+        // Si el radio es un valor inválido, lanzamos un error
+        if (isNaN(parseFloat(radioKilometros)) || !isFinite(radioKilometros)) {
+            throw new Error("El radio debe ser un número válido.");
+        }
+
+        // Si el mapa no existe, lo creamos y agregamos una capa de mapa base
+        if (!mapa) {
+            mapa = L.map('mapa').setView([latitudCensista, longitudCensista], 10);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(mapa);
+        }
+
+        // Borramos los marcadores de ciudades anteriores
+        marcadoresCiudades.forEach((marcador) => {
+            mapa.removeLayer(marcador);
+        });
+        marcadoresCiudades = [];
+
+        // Borramos el círculo de radio anterior, si existe
+        if (circuloRadio) {
+            mapa.removeLayer(circuloRadio);
+        }
 
         // Creamos un icono personalizado rojo para el marcador del censista
         const redIcon = L.icon({
@@ -627,37 +706,43 @@ async function dibujarMapaConCiudadesCensadas(latitudCensista, longitudCensista)
             shadowSize: [41, 41]
         });
 
+        // Borramos el marcador del censista anterior, si existe
+        if (marcadorCensista) {
+            mapa.removeLayer(marcadorCensista);
+        }
+
         // Marcamos la ubicación del censista en el mapa usando el icono personalizado rojo
-        L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
+        marcadorCensista = L.marker([latitudCensista, longitudCensista], { icon: redIcon }).addTo(mapa)
             .bindPopup('¡Aquí estoy!')
             .openPopup();
 
         // Obtenemos todas las ciudades y personas desde las API
-        const ciudades = await obtenerCiudadesEnRadio(latitudCensista, longitudCensista, 7000);
+        const ciudades = await obtenerCiudadesEnRadio(latitudCensista, longitudCensista, radioKilometros);
         const personasCensadas = await obtenerPersonasCensadas();
 
         // Filtramos las ciudades que tienen personas censadas
         const ciudadesConPersonas = filtrarCiudadesConPersonas(ciudades, personasCensadas);
 
         // Dibujamos un círculo celeste como marca de agua en el mapa con el radio especificado (7000 metros)
-        L.circle([latitudCensista, longitudCensista], {
+        circuloRadio = L.circle([latitudCensista, longitudCensista], {
             color: 'blue',
             fillColor: 'blue',
             fillOpacity: 0.2,
-            radius: 150
+            radius: radioKilometros * 1000
         }).addTo(mapa);
 
         // Marcamos las ciudades con personas censadas dentro del radio en el mapa con un ícono diferente
         ciudadesConPersonas.forEach(ciudad => {
-            L.marker([ciudad.latitud, ciudad.longitud]).addTo(mapa)
+            const marcador = L.marker([ciudad.latitud, ciudad.longitud]).addTo(mapa)
                 .bindPopup(ciudad.nombre);
+            marcadoresCiudades.push(marcador);
         });
 
         // Mostramos el contenedor del mapa
         document.getElementById('mapa').style.display = 'block';
     } catch (error) {
         console.error("Error al dibujar el mapa:", error);
-        alert("No se pudo dibujar el mapa.");
+        throw Error("No se pudo dibujar el mapa.")
     }
 }
 
@@ -680,13 +765,13 @@ document.querySelector("#fechaNacimiento").addEventListener("change", (event) =>
         ocupacionSelect.disabled = false;
     }
 });
-function LimpiarCampos() {
-        document.querySelector("#usuario").value = "";
-        document.querySelector("#passRegistro").value = "";
+function limpiarCampos() {
+        document.querySelector("#nombreUsuario").value = "";
+        document.querySelector("#password").value = "";
     }
 
 // Función para limpiar los campos de ingreso de persona
-function LimpiarCamposPersona() {
+function limpiarCamposPersona() {
     document.querySelector("#nombrePersona").value = "";
     document.querySelector("#departamento").value = "";
     document.querySelector("#ciudad").value = "";
@@ -696,7 +781,8 @@ function LimpiarCamposPersona() {
 function OcultarDivs() {
     document.querySelector("#login").style.display = "none";
     document.querySelector("#registro").style.display = "none";
-    document.querySelector("#agregarPersona").style.display = "none";
+    document.querySelector("#listado").style.display = "none";
+    document.querySelector("#listadoCensados").style.display = "none";
 }
 function OcultarBotones(showButtons) {
     if (showButtons) {
@@ -710,25 +796,26 @@ function OcultarBotones(showButtons) {
         document.querySelector("#btnRegistro").style.display = "none";
     }
 }
-// Nueva función para mostrar el div agregarPersona y ocultar los demás botones del div divInicioUsuarioLogueado
-function MostrarAgregarPersona() {
-    OcultarDivs();
-    document.querySelector("#agregarPersona").style.display = "block";
-}
-function AgregarEventos() {
-    document.querySelector("#btnInicio").addEventListener("click", MostrarOcultarDivs);
-    document.querySelector("#btnIngreso").addEventListener("click", MostrarOcultarDivs);
-    document.querySelector("#btnRegistro").addEventListener("click", MostrarOcultarDivs);
-    document.querySelector("#btnCerrarSesion").addEventListener("click", CerrarSesion);
-    document.querySelector("#btnLogin").addEventListener("click", IniciarSesion);
-    document.querySelector("#btnRegistroUsuario").addEventListener("click", Registro);
-    document.querySelector("#btnEnviarDatosPersona").addEventListener("click", AgregarPersona);
-   document.querySelector("#btnListadoPersonas").addEventListener("click",() => {
-       cargarOcupaciones();
-       obtenerListadoPersonas();
-   });
+
+function agregarEventos() {
+    document.querySelector("#ruteo").addEventListener("ionRouteWillChange", navegar);
+    document.querySelector("#btnIngreso").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnRegistro").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnAgregarPersona").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnListadoPersonas").addEventListener("click", mostrarOcultarDivs);
+    document.querySelector("#btnCerrarSesion").addEventListener("click", cerrarSesion);
+    document.querySelector("#btnLogin").addEventListener("click", iniciarSesion);
+    document.querySelector("#btnRegistroUsuario").addEventListener("click", registro);
+    document.querySelector("#btnEnviarDatosPersona").addEventListener("click", agregarPersona);
+    // Evento para obtener la ubicación del censista cuando se hace clic en el botón
+    document.getElementById("btnMapa").addEventListener("click",obtenerUbicacion );
+    document.getElementById("btnDibujarMapa").addEventListener("click", dibujarMapaConCiudadesCensadas);
+    document.querySelector("#btnListadoPersonas").addEventListener("click",() => {
+        cargarOcupaciones();
+        cargarSelectOcupaciones();
+        obtenerListadoPersonas();
+    });
     document.querySelector("#btnAgregarPersona").addEventListener("click", () => {
-        MostrarAgregarPersona();
         // Cargamos departamentos y ocupaciones al hacer clic en el botón "Agregar Persona"
         cargarDepartamentos();
         cargarOcupaciones();
@@ -737,25 +824,32 @@ function AgregarEventos() {
     document.querySelector("#btnCensadosTotales").addEventListener("click", () => {
         mostrarTotales();
     });
+
+    // Asignamos el evento de cambio al select de ocupaciones para actualizar la tabla al cambiar la selección
+    document.querySelector("#selectOcupacion").addEventListener("ionChange", () => {
+        filtrarPersonasPorOcupacion();
+    });
+    document.addEventListener("ionViewWillEnter", () => {
+        cargarDepartamentos();
+    });
 }
-function Inicio(showButtons) {
+function inicio(showButtons) {
     OcultarDivs();
     OcultarBotones(showButtons);
-    AgregarEventos();
-    document.querySelector("#inicio").style.display = "block";
-    if (localStorage.getItem("hayUsuarioLogueado") === "false") {
-        document.querySelector("#divInicioUsuarioDesconocido").style.display = "block";
-        document.querySelector("#divInicioUsuarioLogueado").style.display = "none";
+    agregarEventos();
+    if (localStorage.getItem("token") != null) {
+        ruteo.push("/")
+        document.querySelector("#divInicioUsuarioLogueado").style.display = "block";
     }
     else {
-        document.querySelector("#divInicioUsuarioDesconocido").style.display = "none";
-        document.querySelector("#divInicioUsuarioLogueado").style.display = "block";
-        document.querySelector("#login").style.display = "none";
 
+        //para cargar la pagina en ionic
+        ruteo.push("/login")
+        document.querySelector("#divInicioUsuarioLogueado").style.display = "none";
     }
 }
 
-function MostrarOcultarDivs() {
+function mostrarOcultarDivs() {
     OcultarDivs();
     switch (this.id) {
         case "btnInicio": document.querySelector("#inicio").style.display = "block";
@@ -769,8 +863,11 @@ function MostrarOcultarDivs() {
 
         case "btnCerrarSesion": OcultarBotones(false);
             break;
-
-        case "btnAgregarPersona": document.querySelector("#agregarPersona").style.display = "block";
+        /*case "btnMapa": document.querySelector("#mapa").style.display = "block";
+            break;*/
+        case "btnListadoPersonas": document.querySelector("#listado").style.display = "block";
+            break;
+        case "btnCensadosTotales": document.querySelector("#listadoCensados").style.display = "block";
             break;
     }
 }
@@ -783,3 +880,66 @@ function handleApiError(error) {
         }
     });
 }
+
+function cerrarMenu(){
+    menu.close();
+}
+
+function atras(){
+    ruteo.back();
+}
+
+function navegar(event){
+    ocultarPaginas()
+    let ruta = event.detail.to;
+    if (ruta == "/") {
+        document.querySelector("#pageLogin").style.display = "block";
+    }
+    else if (ruta == "/login") {
+        document.querySelector("#login").style.display="block";
+    }
+    else if (ruta == "/pageRegistro") {
+        document.querySelector("#registro").style.display="block";
+    }
+    else if (ruta == "/agregarPersona") {
+        document.querySelector("#agregarPersona").style.display = "block";
+    }
+    else if (ruta == "/pageDetalle") {
+        document.querySelector("#pageDetalle").style.display = "block";
+    }
+    else if (ruta == "/listadoPersonas") {
+        document.querySelector("#listadoPersonas").style.display = "block";
+        document.querySelector("#listado").style.display = "block";
+    }
+    else if (ruta == "/censadosTotales") {
+        document.querySelector("#censadosTotales").style.display = "block";
+        document.querySelector("#listadoCensados").style.display = "block";
+    }
+    else if (ruta == "/MapaCiudadesCensadas") {
+        document.querySelector("#MapaCiudadesCensadas").style.display = "block";
+    }
+    else{
+        cerrarSesion();
+    }
+}
+
+function ocultarPaginas() {
+    let pages = document.getElementsByClassName("ion-page");
+    for (let i = 0; i < pages.length; i++) {
+
+        if (pages[i].id != null && pages[i].id !== "") {
+            document.querySelector("#" + pages[i].id).style.display = "none";
+        }
+    }
+}
+function displayAlert() {
+    if (alertShown === false) {
+        alertShown = true;
+        cerrarSesion();
+        alert("El tiempo de sesión ha expirado. Por favor vuelva a loguearse");
+    } else {
+        alertShown = true;
+        cerrarSesion();
+    }
+}
+
